@@ -24,6 +24,7 @@ Set these in your `.env.local`:
 ```
 TURSO_DATABASE_URL=
 TURSO_AUTH_TOKEN=
+ADMIN_SECRET=
 ```
 
 ### Schema
@@ -41,3 +42,24 @@ turso db shell <YOUR_DB_NAME> < db/001_init.sql
 More details:
 
 - `db/README.md`
+
+## Admin (secure)
+
+Admin endpoints are protected by `ADMIN_SECRET`.
+
+### UI
+
+- Visit `http://localhost:3000/admin`
+- Paste your `ADMIN_SECRET`
+
+### API
+
+Send the secret via header:
+
+- `Authorization: Bearer <ADMIN_SECRET>`
+
+Endpoints:
+
+- `POST /api/admin/players`
+- `POST /api/admin/pb-runs`
+- `POST /api/admin/tournaments`

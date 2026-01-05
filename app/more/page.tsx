@@ -15,8 +15,8 @@ export default function MorePage() {
             <a className="block font-semibold text-emerald-600" href="https://discord.com" target="_blank" rel="noreferrer">
               Discord
             </a>
-            <a className="block font-semibold text-emerald-600" href="https://namemc.com" target="_blank" rel="noreferrer">
-              NameMC
+            <a className="block font-semibold text-emerald-600" href="https://www.youtube.com/@MinecraftSpeedrunBrasil/featured" target="_blank" rel="noreferrer">
+              Youtube
             </a>
           </div>
         </div>

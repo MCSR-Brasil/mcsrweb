@@ -97,7 +97,14 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
 
           <div className="flex-1 overflow-auto p-4">
             {loading ? (
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">Carregando ranking...</div>
+              <div className="space-y-2">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-[52px] w-full animate-pulse rounded-lg border border-zinc-200 bg-white/70 dark:border-zinc-800 dark:bg-zinc-900/70"
+                  />
+                ))}
+              </div>
             ) : error ? (
               <div className="text-sm text-zinc-600 dark:text-zinc-400">Erro: {error}</div>
             ) : players.length === 0 ? (

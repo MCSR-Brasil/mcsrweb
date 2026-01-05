@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "Início" },
@@ -11,6 +14,8 @@ const navItems = [
 ];
 
 export function TopNav() {
+  const pathname = usePathname();
+
   return (
     <header className="relative">
       <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
@@ -22,20 +27,27 @@ export function TopNav() {
             >
               MCSR BR
             </Link>
-            <div className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Minecraft Speedrunning Brasil
-            </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-2">
+          <nav className="flex flex-wrap items-center gap-1 rounded-xl border border-zinc-200 bg-white/70 p-1 dark:border-zinc-800 dark:bg-zinc-900/60">
             {navItems.map((item) => (
+              (() => {
+                const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                const cls =
+                  "font-minecraft rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wider transition-all " +
+                  (active
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-zinc-700 hover:bg-white/80 dark:text-zinc-200 dark:hover:bg-zinc-800");
+                return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                className={cls}
               >
                 {item.label}
               </Link>
+                );
+              })()
             ))}
           </nav>
         </div>

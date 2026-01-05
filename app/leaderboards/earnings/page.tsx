@@ -26,7 +26,7 @@ export default async function EarningsLeaderboardPage() {
     <div>
       <PageHeader
         title="Ganhos de Torneios"
-        subtitle="Leaderboard de ganhos (CSV por enquanto). Em breve: Turso + histórico completo."
+        subtitle="Eventos de membros/aniversario nao sao considerados para ganhos individuais."
       />
       <TabContent leaders={leaders} uuidMap={uuidMap} events={events} totalFormatted={totalFormatted} />
     </div>

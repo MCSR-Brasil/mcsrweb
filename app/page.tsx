@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { HubSearch } from "../components/hub-search";
-import { PageHeader } from "../components/page-header";
 
 const sections = [
   {
@@ -38,10 +37,14 @@ const sections = [
 export default function Home() {
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="MCSR BR"
-        subtitle="Hub da comunidade: leaderboards, torneios e stats. Use a busca ou entre direto em uma seção."
-      />
+      <div className="py-6 text-center">
+        <h1 className="font-minecraft text-4xl font-black tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
+          MCSR BR
+        </h1>
+        <div className="mt-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          Minecraft Speedrunning Brasil
+        </div>
+      </div>
 
       <HubSearch />
 
@@ -50,13 +53,9 @@ export default function Home() {
           <Link
             key={s.href}
             href={s.href}
-            className="group rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950/50"
+            className="group rounded-2xl border border-zinc-200 bg-white/70 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-md active:translate-y-0 dark:border-zinc-800 dark:bg-zinc-950/50"
           >
-            <div className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50">{s.title}</div>
-            <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{s.desc}</div>
-            <div className="mt-3 text-sm font-semibold text-emerald-600 group-hover:text-emerald-700 dark:text-emerald-400">
-              Abrir
-            </div>
+            <div className="font-minecraft text-lg font-black text-zinc-950 dark:text-zinc-50">{s.title}</div>
           </Link>
         ))}
       </div>
