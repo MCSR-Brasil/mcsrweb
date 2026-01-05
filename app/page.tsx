@@ -1,41 +1,64 @@
-import { getLeaderboardFromCSV, readEarningsCSV } from "../lib/earnings";
-import { readUUIDMap } from "../lib/uuids";
-import { TabContent } from "../components/tab-content";
+import Link from "next/link";
+import { HubSearch } from "../components/hub-search";
+import { PageHeader } from "../components/page-header";
 
-export default async function Home() {
-  const [leaders, uuidMap, events] = await Promise.all([
-    getLeaderboardFromCSV(),
-    readUUIDMap(),
-    readEarningsCSV(),
-  ]);
-  const leadersTotal = leaders.reduce((sum, l) => sum + l.earnings, 0);
-  const emptyWinnersPrizepool = events
-    .filter((e) => (e.winners?.length ?? 0) === 0 && typeof e.prizepool === "number")
-    .reduce((sum, e) => sum + (e.prizepool as number), 0);
-  const total = leadersTotal + emptyWinnersPrizepool;
-  const totalFormatted = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  }).format(total);
+const sections = [
+  {
+    href: "/leaderboards/states",
+    title: "Leaderboard por Estado",
+    desc: "Mapa do Brasil + ranking de estados.",
+  },
+  {
+    href: "/leaderboards/earnings",
+    title: "Ganhos de Torneios",
+    desc: "Prizepools e vencedores.",
+  },
+  {
+    href: "/leaderboards/rsg",
+    title: "RSG Leaderboard",
+    desc: "Ranking geral do RSG.",
+  },
+  {
+    href: "/leaderboards/ranked",
+    title: "Ranked Leaderboard",
+    desc: "MMR / Elo.",
+  },
+  {
+    href: "/tournaments",
+    title: "Torneios",
+    desc: "Torneio atual + histórico.",
+  },
+  {
+    href: "/more",
+    title: "Mais",
+    desc: "Links, guias e informações.",
+  },
+];
+
+export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-black dark:to-zinc-900">
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent" />
-        
-        <main className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <header className="mb-12 text-center">
-            <h1 className="mb-3 bg-gradient-to-br from-zinc-900 via-zinc-700 to-zinc-900 bg-clip-text text-5xl font-black tracking-tight text-transparent dark:from-zinc-50 dark:via-zinc-300 dark:to-zinc-50 sm:text-6xl md:text-7xl">
-              Torneios
-            </h1>
-            <p className="mx-auto max-w-2xl text-base text-zinc-600 dark:text-zinc-400 sm:text-lg">
-              Eventos sem vencedores individuais (300/400 membros) incluídos no total
-            </p>
-          </header>
+    <div className="space-y-8">
+      <PageHeader
+        title="MCSR BR"
+        subtitle="Hub da comunidade: leaderboards, torneios e stats. Use a busca ou entre direto em uma seção."
+      />
 
-          <TabContent leaders={leaders} uuidMap={uuidMap} events={events} totalFormatted={totalFormatted} />
-        </main>
+      <HubSearch />
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {sections.map((s) => (
+          <Link
+            key={s.href}
+            href={s.href}
+            className="group rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950/50"
+          >
+            <div className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50">{s.title}</div>
+            <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{s.desc}</div>
+            <div className="mt-3 text-sm font-semibold text-emerald-600 group-hover:text-emerald-700 dark:text-emerald-400">
+              Abrir
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

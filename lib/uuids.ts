@@ -2,11 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { normalizeName } from "./normalize";
 
-export type UUIDMap = Map<string, string>; // key: normalized name, value: uuid
+export type UUIDMap = Record<string, string>; // key: normalized name, value: uuid
 
 export async function readUUIDMap(csvPath?: string): Promise<UUIDMap> {
   const filePath = csvPath ?? path.resolve(process.cwd(), "data", "uuid.csv");
-  const map: UUIDMap = new Map();
+  const map: UUIDMap = {};
   let raw: string;
   try {
     raw = await fs.readFile(filePath, "utf8");
@@ -22,7 +22,7 @@ export async function readUUIDMap(csvPath?: string): Promise<UUIDMap> {
     const name = normalizeName(trimmed.slice(0, idx));
     const uuid = trimmed.slice(idx + 1).trim();
     if (!name || !uuid) continue;
-    map.set(name, uuid);
+    map[name] = uuid;
   }
   return map;
 }

@@ -3,6 +3,7 @@
 import { RankingsView } from "./rankings-view";
 import { EventsView } from "./events-view";
 import { Tabs } from "./tabs";
+import type { UUIDMap } from "../lib/uuids";
 
 type Leader = { name: string; earnings: number };
 type Winner = { name: string; amount: number };
@@ -21,7 +22,7 @@ export function TabContent({
   totalFormatted,
 }: {
   leaders: Leader[];
-  uuidMap: Map<string, string>;
+  uuidMap: UUIDMap;
   events: EventRow[];
   totalFormatted: string;
 }) {

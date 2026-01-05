@@ -1,0 +1,34 @@
+import { getLeaderboardFromCSV, readEarningsCSV } from "../../../lib/earnings";
+import { readUUIDMap } from "../../../lib/uuids";
+import { TabContent } from "../../../components/tab-content";
+import { PageHeader } from "../../../components/page-header";
+
+export default async function EarningsLeaderboardPage() {
+  const [leaders, uuidMap, events] = await Promise.all([
+    getLeaderboardFromCSV(),
+    readUUIDMap(),
+    readEarningsCSV(),
+  ]);
+
+  const leadersTotal = leaders.reduce((sum, l) => sum + l.earnings, 0);
+  const emptyWinnersPrizepool = events
+    .filter((e) => (e.winners?.length ?? 0) === 0 && typeof e.prizepool === "number")
+    .reduce((sum, e) => sum + (e.prizepool as number), 0);
+  const total = leadersTotal + emptyWinnersPrizepool;
+
+  const totalFormatted = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(total);
+
+  return (
+    <div>
+      <PageHeader
+        title="Ganhos de Torneios"
+        subtitle="Leaderboard de ganhos (CSV por enquanto). Em breve: Turso + histórico completo."
+      />
+      <TabContent leaders={leaders} uuidMap={uuidMap} events={events} totalFormatted={totalFormatted} />
+    </div>
+  );
+}

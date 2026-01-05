@@ -12,6 +12,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
+.font-minecraft {
+  font-family: var(--font-minecraft), var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  letter-spacing: -0.02em;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
