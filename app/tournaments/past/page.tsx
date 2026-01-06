@@ -2,6 +2,8 @@ import Link from "next/link";
 import { PageHeader } from "../../../components/page-header";
 import { getPastTournaments } from "../../../lib/repositories/tournaments";
 
+export const revalidate = 500;
+
 export default async function PastTournamentsPage() {
   const rows = await getPastTournaments(50);
 

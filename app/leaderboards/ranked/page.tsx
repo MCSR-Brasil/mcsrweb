@@ -3,6 +3,8 @@ import { PlayerLeaderboardView } from "../../../components/player-leaderboard-vi
 import { getRunsLeaderboard } from "../../../lib/repositories/leaderboards";
 import { readUUIDMap } from "../../../lib/uuids";
 
+export const revalidate = 500;
+
 const CATEGORIES = ["1.16", "1.16 SSG"] as const;
 
 export default async function RankedLeaderboardPage({

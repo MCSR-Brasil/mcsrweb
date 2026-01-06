@@ -4,6 +4,8 @@ import { BracketView } from "../../../components/bracket-view";
 import { safeParseBracketJson, generateSingleElimBracketFromParticipants, generateDoubleElimBracketFromParticipants } from "../../../lib/bracket";
 import { getTournamentById } from "../../../lib/repositories/tournaments";
 
+export const revalidate = 500;
+
 export default async function TournamentDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const t = await getTournamentById(id);

@@ -8,6 +8,8 @@ import {
 } from "../../lib/bracket";
 import { getTournamentSnapshot } from "../../lib/repositories/tournaments";
 
+export const revalidate = 500;
+
 export default async function TournamentsPage() {
   const { current } = await getTournamentSnapshot();
 
