@@ -20,8 +20,8 @@ export default async function RsgLeaderboardPage({
   return (
     <div>
       <PageHeader
-        title="RSG Leaderboard"
-        subtitle="Ranking por categoria. Mostra apenas a melhor run (menor tempo) de cada player."
+        title="Ranking BR"
+        subtitle="Ranking por categoria. Mostra apenas a melhor run de cada player."
       />
 
       <div className="mb-4 flex flex-wrap justify-center gap-2">
@@ -43,7 +43,7 @@ export default async function RsgLeaderboardPage({
 
       <PlayerLeaderboardView
         title={`Top Jogadores (${selected})`}
-        valueLabel="Tempo"
+        valueLabel=""
         rows={rows}
         uuidMap={uuidMap}
         valueFormat="time_ms"

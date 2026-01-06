@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "Início" },
-  { href: "/leaderboards/states", label: "Ranking de Estados" },
-  { href: "/leaderboards/earnings", label: "Ganhos Em torneios" },
-  { href: "/leaderboards/rsg", label: "RSG e SSG" },
+  { href: "/leaderboards/states", label: "Estados" },
+  { href: "/leaderboards/earnings", label: "!earnings" },
+  { href: "/leaderboards/rsg", label: "Ranking BR" },
   { href: "/leaderboards/ranked", label: "MCSR Ranked" },
   { href: "/tournaments", label: "Torneios" },
   { href: "/more", label: "Mais" },
