@@ -181,6 +181,7 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
       <div
         ref={containerRef}
         className="relative overflow-x-auto overflow-y-hidden rounded-2xl border border-zinc-200 bg-white/50 px-3 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30"
+        style={{ height: "min(70vh, 560px)" }}
       >
         <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
           <g fill="none" stroke="currentColor" className="text-zinc-300 dark:text-zinc-800" strokeWidth={2}>
@@ -190,24 +191,28 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
           </g>
         </svg>
 
-        <div className="relative flex min-h-[240px] gap-5">
+        <div className="relative flex h-full min-h-[360px] gap-5">
           {rounds.map((r, idx) => (
             <div key={`${r.name}-${idx}`} className="w-[220px] shrink-0">
               <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 {r.name}
               </div>
               {(() => {
-                const baseGap = 10;
-                const gapPx = Math.max(10, Math.round(baseGap * Math.pow(2, idx)));
-                const padTopPx = Math.round(gapPx / 2);
+                const base = Math.max(1, Math.pow(2, idx));
+                const topBottom = Math.max(1, Math.round(base / 2));
 
                 return (
-                  <div className="flex flex-col" style={{ gap: `${gapPx}px`, paddingTop: `${padTopPx}px` }}>
+                  <div className="flex h-[calc(100%-22px)] flex-col">
+                    <div style={{ flexGrow: topBottom }} />
                     {r.matches.map((m, mIdx) => (
-                      <div key={m.id} data-round={idx} data-match={mIdx} className="relative">
-                        <MatchCard match={m} />
+                      <div key={m.id} className="contents">
+                        <div data-round={idx} data-match={mIdx} className="relative">
+                          <MatchCard match={m} />
+                        </div>
+                        {mIdx < r.matches.length - 1 ? <div style={{ flexGrow: base }} /> : null}
                       </div>
                     ))}
+                    <div style={{ flexGrow: topBottom }} />
                   </div>
                 );
               })()}
