@@ -26,30 +26,38 @@ export async function getRsgLeaderboard(limit = 100): Promise<PlayerLeaderboardR
   const db = getDbClient();
   if (!db) return mockRsg.slice(0, limit);
 
-  const res = await db.execute({
-    sql: "select name, value, state_uf as stateUF from leaderboard_rsg order by value desc limit ?",
-    args: [limit],
-  });
+  try {
+    const res = await db.execute({
+      sql: "select name, value, state_uf as stateUF from leaderboard_rsg order by value desc limit ?",
+      args: [limit],
+    });
 
-  return res.rows.map((r: Record<string, unknown>) => ({
-    name: String(r.name ?? ""),
-    value: Number(r.value ?? 0),
-    stateUF: r.stateUF ? String(r.stateUF) : null,
-  }));
+    return res.rows.map((r: Record<string, unknown>) => ({
+      name: String(r.name ?? ""),
+      value: Number(r.value ?? 0),
+      stateUF: r.stateUF ? String(r.stateUF) : null,
+    }));
+  } catch {
+    return mockRsg.slice(0, limit);
+  }
 }
 
 export async function getRankedLeaderboard(limit = 100): Promise<PlayerLeaderboardRow[]> {
   const db = getDbClient();
   if (!db) return mockRanked.slice(0, limit);
 
-  const res = await db.execute({
-    sql: "select name, value, state_uf as stateUF from leaderboard_ranked order by value desc limit ?",
-    args: [limit],
-  });
+  try {
+    const res = await db.execute({
+      sql: "select name, value, state_uf as stateUF from leaderboard_ranked order by value desc limit ?",
+      args: [limit],
+    });
 
-  return res.rows.map((r: Record<string, unknown>) => ({
-    name: String(r.name ?? ""),
-    value: Number(r.value ?? 0),
-    stateUF: r.stateUF ? String(r.stateUF) : null,
-  }));
+    return res.rows.map((r: Record<string, unknown>) => ({
+      name: String(r.name ?? ""),
+      value: Number(r.value ?? 0),
+      stateUF: r.stateUF ? String(r.stateUF) : null,
+    }));
+  } catch {
+    return mockRanked.slice(0, limit);
+  }
 }
