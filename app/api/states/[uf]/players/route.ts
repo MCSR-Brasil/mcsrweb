@@ -1,11 +1,12 @@
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getStatePlayers } from "../../../../../lib/repositories/states";
 
 export async function GET(
-  req: Request,
-  ctx: { params: { uf: string } }
+  req: NextRequest,
+  ctx: { params: Promise<{ uf: string }> }
 ) {
-  const { uf } = ctx.params;
+  const { uf } = await ctx.params;
   const url = new URL(req.url);
   const category = url.searchParams.get("category") ?? "Any%";
   const rows = await getStatePlayers(uf, 50, category);
