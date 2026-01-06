@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type PlayerRow = { uuid: string; name: string; stateUF: string | null };
 
@@ -70,6 +70,9 @@ export default function AdminPage() {
 
   // PB form
   const [pbPlayerUUID, setPbPlayerUUID] = useState("");
+  const [pbPlayerQuery, setPbPlayerQuery] = useState("");
+  const [players, setPlayers] = useState<PlayerRow[]>([]);
+  const [playersLoading, setPlayersLoading] = useState(false);
   const [pbCategory, setPbCategory] = useState("1.16");
   const [pbTimeMin, setPbTimeMin] = useState("0");
   const [pbTimeSec, setPbTimeSec] = useState("0");
@@ -89,6 +92,40 @@ export default function AdminPage() {
   const [tDescription, setTDescription] = useState("");
 
   const [log, setLog] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!ready) {
+        setPlayers([]);
+        return;
+      }
+      setPlayersLoading(true);
+      try {
+        const url = new URL("/api/admin/players", window.location.origin);
+        const q = pbPlayerQuery.trim();
+        if (q) url.searchParams.set("q", q);
+        url.searchParams.set("limit", "200");
+
+        const res = await fetch(url.toString(), {
+          headers: { ...authHeaders(secret) },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { rows?: PlayerRow[] };
+        if (cancelled) return;
+        setPlayers(Array.isArray(data.rows) ? data.rows : []);
+      } catch {
+        if (!cancelled) setPlayers([]);
+      } finally {
+        if (!cancelled) setPlayersLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, secret, pbPlayerQuery]);
 
   const canSubmitPlayer = useMemo(() => ready && pUuid.trim() && pName.trim(), [ready, pUuid, pName]);
   const computedPbTimeMs = useMemo(() => durationPartsToMs(pbTimeMin, pbTimeSec, pbTimeMs), [pbTimeMin, pbTimeSec, pbTimeMs]);
@@ -198,10 +235,30 @@ export default function AdminPage() {
 
           <div className="mt-3 space-y-2">
             <input
+              value={pbPlayerQuery}
+              onChange={(e) => setPbPlayerQuery(e.target.value)}
+              placeholder={playersLoading ? "Buscando players..." : "Buscar player (nome)"}
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <select
               value={pbPlayerUUID}
               onChange={(e) => setPbPlayerUUID(e.target.value)}
-              placeholder="Player UUID"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            >
+              <option value="">Selecionar player</option>
+              {players.map((p) => (
+                <option key={p.uuid} value={p.uuid}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            <input
+              value={pbPlayerUUID}
+              readOnly
+              placeholder="Player UUID"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-xs font-black text-zinc-700 shadow-sm outline-none transition-all dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
             />
 
             <select
