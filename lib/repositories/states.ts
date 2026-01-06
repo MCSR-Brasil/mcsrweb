@@ -29,26 +29,30 @@ export async function getStateLeaderboard(limit = 27): Promise<StateLeaderboardR
   const db = getDbClient();
   if (!db) return mock.slice(0, limit);
 
-  const res = await db.execute({
-    sql: "select state_uf as uf, count(*) as value from players group by state_uf order by value desc",
-  });
+  try {
+    const res = await db.execute({
+      sql: "select state_uf as uf, count(*) as value from players group by state_uf order by value desc",
+    });
 
-  const byUF = new Map<string, number>();
-  for (const r of res.rows) {
-    const uf = String(r.uf ?? "").toUpperCase();
-    const value = Number(r.value ?? 0);
-    if (!uf) continue;
-    byUF.set(uf, value);
+    const byUF = new Map<string, number>();
+    for (const r of res.rows) {
+      const uf = String(r.uf ?? "").toUpperCase();
+      const value = Number(r.value ?? 0);
+      if (!uf) continue;
+      byUF.set(uf, value);
+    }
+
+    const rows = BRAZIL_STATES.map((s) => ({
+      uf: s.uf,
+      name: s.name,
+      value: byUF.get(s.uf) ?? 0,
+      amchartsId: s.amchartsId,
+    })).sort((a, b) => b.value - a.value);
+
+    return rows.slice(0, limit);
+  } catch {
+    return mock.slice(0, limit);
   }
-
-  const rows = BRAZIL_STATES.map((s) => ({
-    uf: s.uf,
-    name: s.name,
-    value: byUF.get(s.uf) ?? 0,
-    amchartsId: s.amchartsId,
-  })).sort((a, b) => b.value - a.value);
-
-  return rows.slice(0, limit);
 }
 
 const mockPlayers: StatePlayerRow[] = [
@@ -73,17 +77,21 @@ export async function getStatePlayers(uf: string, limit = 50, category = "Any%" 
     return mockPlayers.filter((p) => p.stateUF === stateUF && (p.category ?? "Any%") === cat).slice(0, limit);
   }
 
-  const res = await db.execute({
-    sql: "\n      select\n        p.name as name,\n        b.time_ms as timeMs,\n        p.state_uf as stateUF,\n        b.category as category,\n        b.achieved_at as achievedAt,\n        b.link as link\n      from players p\n      join v_player_best_runs b on b.player_uuid = p.uuid\n      where p.state_uf = ? and b.category = ?\n      order by b.time_ms asc\n      limit ?\n    ",
-    args: [stateUF, cat, limit],
-  });
+  try {
+    const res = await db.execute({
+      sql: "\n      select\n        p.name as name,\n        b.time_ms as timeMs,\n        p.state_uf as stateUF,\n        b.category as category,\n        b.achieved_at as achievedAt,\n        b.link as link\n      from players p\n      join v_player_best_runs b on b.player_uuid = p.uuid\n      where p.state_uf = ? and b.category = ?\n      order by b.time_ms asc\n      limit ?\n    ",
+      args: [stateUF, cat, limit],
+    });
 
-  return res.rows.map((r: Record<string, unknown>) => ({
-    name: String(r.name ?? ""),
-    timeMs: Number(r.timeMs ?? 0),
-    stateUF: String(r.stateUF ?? stateUF),
-    category: r.category ? String(r.category) : undefined,
-    achievedAt: r.achievedAt ? String(r.achievedAt) : null,
-    link: r.link ? String(r.link) : null,
-  }));
+    return res.rows.map((r: Record<string, unknown>) => ({
+      name: String(r.name ?? ""),
+      timeMs: Number(r.timeMs ?? 0),
+      stateUF: String(r.stateUF ?? stateUF),
+      category: r.category ? String(r.category) : undefined,
+      achievedAt: r.achievedAt ? String(r.achievedAt) : null,
+      link: r.link ? String(r.link) : null,
+    }));
+  } catch {
+    return mockPlayers.filter((p) => p.stateUF === stateUF && (p.category ?? "Any%") === cat).slice(0, limit);
+  }
 }

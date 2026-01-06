@@ -50,19 +50,23 @@ export async function getTournamentSnapshot(): Promise<TournamentSnapshot> {
     return splitCurrentAndPast(mockData(), nowMs);
   }
 
-  const res = await db.execute({
-    sql: "select id, name, starts_at as startsAt, ends_at as endsAt, prizepool as prizepool from tournaments order by ends_at desc",
-  });
+  try {
+    const res = await db.execute({
+      sql: "select id, name, starts_at as startsAt, ends_at as endsAt, prizepool as prizepool from tournaments order by ends_at desc",
+    });
 
-  const rows = res.rows.map((r: Record<string, unknown>) => ({
-    id: String(r.id ?? ""),
-    name: String(r.name ?? ""),
-    startsAt: String(r.startsAt ?? ""),
-    endsAt: String(r.endsAt ?? ""),
-    prizepool: String(r.prizepool ?? ""),
-  }));
+    const rows = res.rows.map((r: Record<string, unknown>) => ({
+      id: String(r.id ?? ""),
+      name: String(r.name ?? ""),
+      startsAt: String(r.startsAt ?? ""),
+      endsAt: String(r.endsAt ?? ""),
+      prizepool: String(r.prizepool ?? ""),
+    }));
 
-  return splitCurrentAndPast(rows, nowMs);
+    return splitCurrentAndPast(rows, nowMs);
+  } catch {
+    return splitCurrentAndPast(mockData(), nowMs);
+  }
 }
 
 export async function getPastTournaments(limit = 50): Promise<Tournament[]> {
@@ -73,16 +77,20 @@ export async function getPastTournaments(limit = 50): Promise<Tournament[]> {
     return splitCurrentAndPast(mockData(), nowMs).past.slice(0, limit);
   }
 
-  const res = await db.execute({
-    sql: "select id, name, starts_at as startsAt, ends_at as endsAt, prizepool as prizepool from tournaments where ends_at <= datetime('now') order by ends_at desc limit ?",
-    args: [limit],
-  });
+  try {
+    const res = await db.execute({
+      sql: "select id, name, starts_at as startsAt, ends_at as endsAt, prizepool as prizepool from tournaments where ends_at <= datetime('now') order by ends_at desc limit ?",
+      args: [limit],
+    });
 
-  return res.rows.map((r: Record<string, unknown>) => ({
-    id: String(r.id ?? ""),
-    name: String(r.name ?? ""),
-    startsAt: String(r.startsAt ?? ""),
-    endsAt: String(r.endsAt ?? ""),
-    prizepool: String(r.prizepool ?? ""),
-  }));
+    return res.rows.map((r: Record<string, unknown>) => ({
+      id: String(r.id ?? ""),
+      name: String(r.name ?? ""),
+      startsAt: String(r.startsAt ?? ""),
+      endsAt: String(r.endsAt ?? ""),
+      prizepool: String(r.prizepool ?? ""),
+    }));
+  } catch {
+    return splitCurrentAndPast(mockData(), nowMs).past.slice(0, limit);
+  }
 }
