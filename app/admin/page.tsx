@@ -25,12 +25,6 @@ type TournamentRow = {
   description?: string | null;
 };
 
-type ScoreRow = {
-  playerUUID: string;
-  value: number;
-  source?: string | null;
-};
-
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -76,7 +70,7 @@ export default function AdminPage() {
 
   // PB form
   const [pbPlayerUUID, setPbPlayerUUID] = useState("");
-  const [pbCategory, setPbCategory] = useState("Any%");
+  const [pbCategory, setPbCategory] = useState("1.16");
   const [pbTimeMin, setPbTimeMin] = useState("0");
   const [pbTimeSec, setPbTimeSec] = useState("0");
   const [pbTimeMs, setPbTimeMs] = useState("0");
@@ -94,15 +88,6 @@ export default function AdminPage() {
   const [tPrizepool, setTPrizepool] = useState("");
   const [tDescription, setTDescription] = useState("");
 
-  // Scores form
-  const [rankedPlayerUUID, setRankedPlayerUUID] = useState("");
-  const [rankedValue, setRankedValue] = useState("");
-  const [rankedSource, setRankedSource] = useState("");
-
-  const [rsgPlayerUUID, setRsgPlayerUUID] = useState("");
-  const [rsgValue, setRsgValue] = useState("");
-  const [rsgCategory, setRsgCategory] = useState("1.16");
-
   const [log, setLog] = useState<string[]>([]);
 
   const canSubmitPlayer = useMemo(() => ready && pUuid.trim() && pName.trim(), [ready, pUuid, pName]);
@@ -114,16 +99,6 @@ export default function AdminPage() {
   const canSubmitTournament = useMemo(
     () => ready && tId.trim() && tName.trim() && tStartsAt.trim() && tEndsAt.trim(),
     [ready, tId, tName, tStartsAt, tEndsAt]
-  );
-
-  const canSubmitRanked = useMemo(
-    () => ready && rankedPlayerUUID.trim() && Number(rankedValue) > 0,
-    [ready, rankedPlayerUUID, rankedValue]
-  );
-
-  const canSubmitRsg = useMemo(
-    () => ready && rsgPlayerUUID.trim() && Number(rsgValue) > 0 && rsgCategory.trim().length > 0,
-    [ready, rsgPlayerUUID, rsgValue, rsgCategory]
   );
 
   function pushLog(line: string) {
@@ -228,12 +203,15 @@ export default function AdminPage() {
               placeholder="Player UUID"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
-            <input
+
+            <select
               value={pbCategory}
               onChange={(e) => setPbCategory(e.target.value)}
-              placeholder="Categoria (ex: Any%)"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-            />
+            >
+              <option value="1.16">1.16</option>
+              <option value="1.16 SSG">1.16 SSG</option>
+            </select>
 
             <div className="grid grid-cols-3 gap-2">
               <input
@@ -394,115 +372,6 @@ export default function AdminPage() {
               className={
                 "font-minecraft mt-2 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider shadow-sm transition-all " +
                 (canSubmitTournament
-                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                  : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500")
-              }
-            >
-              Salvar
-            </button>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/50">
-          <div className="font-minecraft text-sm font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            Ranked Scores
-          </div>
-
-          <div className="mt-3 space-y-2">
-            <input
-              value={rankedPlayerUUID}
-              onChange={(e) => setRankedPlayerUUID(e.target.value)}
-              placeholder="Player UUID"
-              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-            />
-            <input
-              inputMode="numeric"
-              value={rankedValue}
-              onChange={(e) => setRankedValue(e.target.value)}
-              placeholder="Value"
-              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-            />
-            <input
-              value={rankedSource}
-              onChange={(e) => setRankedSource(e.target.value)}
-              placeholder="Source (opcional)"
-              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-            />
-
-            <button
-              type="button"
-              disabled={!canSubmitRanked}
-              onClick={async () => {
-                try {
-                  await postJson("/api/admin/ranked-scores", {
-                    playerUUID: rankedPlayerUUID,
-                    value: Number(rankedValue),
-                    source: rankedSource || null,
-                  } satisfies ScoreRow);
-                  pushLog(`Ranked salvo: ${rankedPlayerUUID}`);
-                } catch (e) {
-                  pushLog(`Erro: ${e instanceof Error ? e.message : "failed"}`);
-                }
-              }}
-              className={
-                "font-minecraft mt-2 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider shadow-sm transition-all " +
-                (canSubmitRanked
-                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                  : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500")
-              }
-            >
-              Salvar
-            </button>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/50">
-          <div className="font-minecraft text-sm font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            RSG Scores
-          </div>
-
-          <div className="mt-3 space-y-2">
-            <input
-              value={rsgPlayerUUID}
-              onChange={(e) => setRsgPlayerUUID(e.target.value)}
-              placeholder="Player UUID"
-              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-            />
-            <input
-              inputMode="numeric"
-              value={rsgValue}
-              onChange={(e) => setRsgValue(e.target.value)}
-              placeholder="Value"
-              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-            />
-
-            <select
-              value={rsgCategory}
-              onChange={(e) => setRsgCategory(e.target.value)}
-              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-            >
-              <option value="1.16">1.16</option>
-              <option value="1.16 SSG">1.16 SSG</option>
-            </select>
-
-            <button
-              type="button"
-              disabled={!canSubmitRsg}
-              onClick={async () => {
-                try {
-                  await postJson("/api/admin/rsg-scores", {
-                    playerUUID: rsgPlayerUUID,
-                    value: Number(rsgValue),
-                    source: rsgCategory,
-                  } satisfies ScoreRow);
-                  pushLog(`RSG salvo: ${rsgPlayerUUID} (${rsgCategory})`);
-                } catch (e) {
-                  pushLog(`Erro: ${e instanceof Error ? e.message : "failed"}`);
-                }
-              }}
-              className={
-                "font-minecraft mt-2 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider shadow-sm transition-all " +
-                (canSubmitRsg
                   ? "bg-emerald-600 text-white hover:bg-emerald-700"
                   : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500")
               }
