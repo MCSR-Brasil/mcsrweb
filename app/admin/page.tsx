@@ -45,6 +45,14 @@ function datetimeLocalToSqliteText(localValue: string) {
   return d.toISOString();
 }
 
+function dateToSqliteNoonText(dateValue: string) {
+  const s = dateValue.trim();
+  if (!s) return "";
+  const d = new Date(`${s}T12:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString();
+}
+
 function durationPartsToMs(minStr: string, secStr: string, msStr: string) {
   const min = Number(minStr || 0);
   const sec = Number(secStr || 0);
@@ -70,14 +78,13 @@ export default function AdminPage() {
 
   // PB form
   const [pbPlayerUUID, setPbPlayerUUID] = useState("");
-  const [pbPlayerQuery, setPbPlayerQuery] = useState("");
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
   const [pbCategory, setPbCategory] = useState("1.16");
   const [pbTimeMin, setPbTimeMin] = useState("0");
   const [pbTimeSec, setPbTimeSec] = useState("0");
   const [pbTimeMs, setPbTimeMs] = useState("0");
-  const [pbAchievedAt, setPbAchievedAt] = useState("");
+  const [pbAchievedOn, setPbAchievedOn] = useState("");
   const [pbLink, setPbLink] = useState("");
   const [pbDescription, setPbDescription] = useState("");
   const [pbSeed, setPbSeed] = useState("");
@@ -103,8 +110,6 @@ export default function AdminPage() {
       setPlayersLoading(true);
       try {
         const url = new URL("/api/admin/players", window.location.origin);
-        const q = pbPlayerQuery.trim();
-        if (q) url.searchParams.set("q", q);
         url.searchParams.set("limit", "200");
 
         const res = await fetch(url.toString(), {
@@ -125,7 +130,7 @@ export default function AdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [ready, secret, pbPlayerQuery]);
+  }, [ready, secret]);
 
   const canSubmitPlayer = useMemo(() => ready && pUuid.trim() && pName.trim(), [ready, pUuid, pName]);
   const computedPbTimeMs = useMemo(() => durationPartsToMs(pbTimeMin, pbTimeSec, pbTimeMs), [pbTimeMin, pbTimeSec, pbTimeMs]);
@@ -234,32 +239,20 @@ export default function AdminPage() {
           </div>
 
           <div className="mt-3 space-y-2">
-            <input
-              value={pbPlayerQuery}
-              onChange={(e) => setPbPlayerQuery(e.target.value)}
-              placeholder={playersLoading ? "Buscando players..." : "Buscar player (nome)"}
-              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
-            />
-
             <select
               value={pbPlayerUUID}
               onChange={(e) => setPbPlayerUUID(e.target.value)}
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             >
-              <option value="">Selecionar player</option>
+              {!ready ? <option value="">Insira o secret para carregar players</option> : null}
+              {ready && playersLoading ? <option value="">Carregando...</option> : null}
+              {ready && !playersLoading ? <option value="">Selecionar player</option> : null}
               {players.map((p) => (
                 <option key={p.uuid} value={p.uuid}>
                   {p.name}
                 </option>
               ))}
             </select>
-
-            <input
-              value={pbPlayerUUID}
-              readOnly
-              placeholder="Player UUID"
-              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-xs font-black text-zinc-700 shadow-sm outline-none transition-all dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
-            />
 
             <select
               value={pbCategory}
@@ -295,10 +288,9 @@ export default function AdminPage() {
             </div>
 
             <input
-              type="datetime-local"
-              value={pbAchievedAt}
-              onChange={(e) => setPbAchievedAt(e.target.value)}
-              placeholder="Achieved At"
+              type="date"
+              value={pbAchievedOn}
+              onChange={(e) => setPbAchievedOn(e.target.value)}
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
             <input
@@ -338,7 +330,7 @@ export default function AdminPage() {
                     playerUUID: pbPlayerUUID,
                     category: pbCategory,
                     timeMs: computedPbTimeMs,
-                    achievedAt: pbAchievedAt ? datetimeLocalToSqliteText(pbAchievedAt) : null,
+                    achievedAt: pbAchievedOn ? dateToSqliteNoonText(pbAchievedOn) : null,
                     link: pbLink || null,
                     description: pbDescription || null,
                     seed: pbSeed || null,
