@@ -419,8 +419,14 @@ export default function AdminPage() {
                   inputMode="numeric"
                   value={tLosersStart}
                   onChange={(e) => setTLosersStart(e.target.value)}
-                  placeholder="Losers bracket starts round (ex: 2)"
-                  className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                  placeholder="Losers bracket starts round (Double Elim) (ex: 2)"
+                  disabled={tBracketFormat !== "double_elim"}
+                  className={
+                    "font-minecraft w-full rounded-xl border px-4 py-3 text-xs font-black shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 " +
+                    (tBracketFormat === "double_elim"
+                      ? "border-zinc-200 bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
+                      : "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-500 dark:bg-zinc-950 dark:text-zinc-500")
+                  }
                 />
               </>
             ) : null}

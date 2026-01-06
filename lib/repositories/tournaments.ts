@@ -58,12 +58,23 @@ function splitCurrentAndPast(rows: Tournament[], nowMs: number): TournamentSnaps
   const current =
     rows
       .filter((t) => {
+        // If endsAt is NULL, treat it as "ongoing" (admin uses this to mark the active tournament).
+        if (t.endsAt == null) return true;
+
         const start = Date.parse(t.startsAt);
-        const end = t.endsAt ? Date.parse(t.endsAt) : Number.POSITIVE_INFINITY;
-        if (!Number.isFinite(start)) return false;
+        const end = Date.parse(t.endsAt);
+        if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
         return start <= nowMs && nowMs < end;
       })
-      .sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt))[0] ?? null;
+      .sort((a, b) => {
+        const aStart = Date.parse(a.startsAt);
+        const bStart = Date.parse(b.startsAt);
+        // Prefer the most recently-started tournament; if parsing fails, push it lower.
+        if (!Number.isFinite(aStart) && !Number.isFinite(bStart)) return 0;
+        if (!Number.isFinite(aStart)) return 1;
+        if (!Number.isFinite(bStart)) return -1;
+        return bStart - aStart;
+      })[0] ?? null;
   const past = rows
     .filter((t) => (t.endsAt ? Date.parse(t.endsAt) <= nowMs : false))
     .sort((a, b) => Date.parse(b.endsAt ?? "") - Date.parse(a.endsAt ?? ""));
