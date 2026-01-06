@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { normalizeName } from "../lib/normalize";
 import type { UUIDMap } from "../lib/uuids";
 import type { StateLeaderboardRow, StatePlayerRow } from "../lib/repositories/states";
@@ -15,6 +15,8 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORIES)[number]>("1.16");
 
+  const cacheRef = useRef(new Map<string, StatePlayerRow[]>());
+
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState<StatePlayerRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +24,15 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
   useEffect(() => {
     let cancelled = false;
     async function run() {
+      const key = `${selectedUF}::${selectedCategory}`;
+      const cached = cacheRef.current.get(key);
+      if (cached) {
+        setPlayers(cached);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -36,7 +47,11 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = (await res.json()) as { rows: StatePlayerRow[] };
-        if (!cancelled) setPlayers(Array.isArray(json.rows) ? json.rows : []);
+        const next = Array.isArray(json.rows) ? json.rows : [];
+        if (!cancelled) {
+          setPlayers(next);
+          cacheRef.current.set(key, next);
+        }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Failed to load");
@@ -174,7 +189,13 @@ function SidebarPlayerRow({
   format: "mm_ss" | "time_ms";
 }) {
   const uuid = uuidMap[normalizeName(name)];
-  const img = uuid ? `https://skins.mcstats.com/face/${uuid}` : null;
+  const primary = uuid ? `https://crafatar.com/avatars/${uuid}?size=32&overlay` : null;
+  const fallback = uuid ? `https://mc-heads.net/avatar/${uuid}/32` : null;
+  const [img, setImg] = useState<string | null>(primary);
+
+  useEffect(() => {
+    setImg(primary);
+  }, [primary]);
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -187,6 +208,10 @@ function SidebarPlayerRow({
             className="h-8 w-8 rounded-md border border-zinc-200 dark:border-zinc-700"
             loading="lazy"
             referrerPolicy="no-referrer"
+            onError={() => {
+              if (fallback && img !== fallback) setImg(fallback);
+              else setImg(null);
+            }}
           />
         ) : null}
         <div className="truncate text-sm font-extrabold text-zinc-900 dark:text-zinc-50">{name}</div>

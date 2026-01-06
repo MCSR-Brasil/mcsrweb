@@ -60,7 +60,10 @@ export function StateMap({
     polygonSeries.mapPolygons.template.setAll({
       tooltipText: "{name}: {value}",
       interactive: true,
-      strokeOpacity: 0.3,
+      fillOpacity: 0.95,
+      stroke: am5.color(0xffffff),
+      strokeWidth: 1.2,
+      strokeOpacity: 0.9,
     });
 
     polygonSeries.mapPolygons.template.states.create("active", {
@@ -73,11 +76,24 @@ export function StateMap({
       {
         target: polygonSeries.mapPolygons.template,
         dataField: "value",
-        min: am5.color(0x064e3b),
-        max: am5.color(0x34d399),
+        // Blue -> Purple -> Pink-ish style heatmap
+        min: am5.color(0x1d4ed8),
+        max: am5.color(0xf43f5e),
         key: "fill",
       },
     ]);
+
+    polygonSeries.mapPolygons.template.adapters.add("fill", (fill, target) => {
+      const v = Number((target.dataItem as any)?.get?.("value") ?? (target.dataItem as any)?.dataContext?.value ?? 0);
+      if (!Number.isFinite(v) || v <= 0) return am5.color(0x0f172a);
+      return fill;
+    });
+
+    polygonSeries.mapPolygons.template.adapters.add("fillOpacity", (op, target) => {
+      const v = Number((target.dataItem as any)?.get?.("value") ?? (target.dataItem as any)?.dataContext?.value ?? 0);
+      if (!Number.isFinite(v) || v <= 0) return 0.35;
+      return op;
+    });
 
     polygonSeries.mapPolygons.template.events.on("click", (ev) => {
       const dc = ev.target.dataItem?.dataContext as any;
