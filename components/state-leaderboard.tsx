@@ -6,7 +6,7 @@ import type { UUIDMap } from "../lib/uuids";
 import type { StateLeaderboardRow, StatePlayerRow } from "../lib/repositories/states";
 import { StateMap } from "./state-map";
 
-const CATEGORIES = ["1.16", "1.16 SSG"] as const;
+const CATEGORIES = ["Ranked", "1.16", "1.16 SSG"] as const;
 
 export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[]; uuidMap: UUIDMap }) {
   const defaultSelected = useMemo(() => rows[0] ?? null, [rows]);
@@ -146,6 +146,7 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
                     timeMs={p.timeMs}
                     link={p.link ?? null}
                     uuidMap={uuidMap}
+                    format={selectedCategory === "Ranked" ? "mm_ss" : "time_ms"}
                   />
                 ))}
               </div>
@@ -163,12 +164,14 @@ function SidebarPlayerRow({
   timeMs,
   link,
   uuidMap,
+  format,
 }: {
   rank: number;
   name: string;
   timeMs: number;
   link: string | null;
   uuidMap: UUIDMap;
+  format: "mm_ss" | "time_ms";
 }) {
   const uuid = uuidMap[normalizeName(name)];
   const img = uuid ? `https://skins.mcstats.com/face/${uuid}` : null;
@@ -191,7 +194,7 @@ function SidebarPlayerRow({
 
       <div className="text-right">
         <div className="text-sm font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
-          {formatTimeMs(timeMs)}
+          {format === "mm_ss" ? formatMmSs(timeMs) : formatTimeMs(timeMs)}
         </div>
         {link ? (
           <a
@@ -216,4 +219,11 @@ function formatTimeMs(ms: number): string {
   const seconds = totalSeconds % 60;
   const millis = Math.max(0, ms % 1000);
   return `${minutes}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
+}
+
+function formatMmSs(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
