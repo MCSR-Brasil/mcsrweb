@@ -51,37 +51,16 @@ FROM (
 )
 WHERE rn = 1;
 
-CREATE TABLE IF NOT EXISTS ranked_scores (
-  player_uuid TEXT PRIMARY KEY,
-  value INTEGER NOT NULL,
-  source TEXT,
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (player_uuid) REFERENCES players(uuid) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS rsg_scores (
-  player_uuid TEXT PRIMARY KEY,
-  value INTEGER NOT NULL,
-  source TEXT,
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (player_uuid) REFERENCES players(uuid) ON DELETE CASCADE
-);
-
-CREATE VIEW IF NOT EXISTS leaderboard_ranked AS
+CREATE VIEW IF NOT EXISTS v_leaderboard_runs AS
 SELECT
   p.name AS name,
-  s.value AS value,
-  p.state_uf AS state_uf
-FROM ranked_scores s
-JOIN players p ON p.uuid = s.player_uuid;
-
-CREATE VIEW IF NOT EXISTS leaderboard_rsg AS
-SELECT
-  p.name AS name,
-  s.value AS value,
-  p.state_uf AS state_uf
-FROM rsg_scores s
-JOIN players p ON p.uuid = s.player_uuid;
+  p.state_uf AS state_uf,
+  b.category AS category,
+  b.time_ms AS time_ms,
+  b.achieved_at AS achieved_at,
+  b.link AS link
+FROM v_player_best_runs b
+JOIN players p ON p.uuid = b.player_uuid;
 
 CREATE TABLE IF NOT EXISTS tournaments (
   id TEXT PRIMARY KEY,

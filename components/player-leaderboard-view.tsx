@@ -22,11 +22,13 @@ export function PlayerLeaderboardView({
   valueLabel,
   rows,
   uuidMap,
+  formatValue,
 }: {
   title: string;
   valueLabel: string;
   rows: PlayerRow[];
   uuidMap: UUIDMap;
+  formatValue?: (value: number) => string;
 }) {
   return (
     <div className="space-y-3">
@@ -39,6 +41,7 @@ export function PlayerLeaderboardView({
             rank={i + 1}
             uuidMap={uuidMap}
             valueLabel={valueLabel}
+            formatValue={formatValue}
           />
         ))}
       </div>
@@ -51,11 +54,13 @@ function PlayerCard({
   rank,
   uuidMap,
   valueLabel,
+  formatValue,
 }: {
   player: PlayerRow;
   rank: number;
   uuidMap: UUIDMap;
   valueLabel: string;
+  formatValue?: (value: number) => string;
 }) {
   const paneColors = rankColor(rank - 1);
   const placeholderUUIDs = [
@@ -110,7 +115,7 @@ function PlayerCard({
           </div>
           <div className="text-right">
             <div className="text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 md:text-3xl">
-              {player.value.toLocaleString("pt-BR")}
+              {(formatValue ? formatValue(player.value) : player.value.toLocaleString("pt-BR"))}
             </div>
             <div className="text-xs uppercase tracking-wider text-zinc-500">{valueLabel}</div>
           </div>
