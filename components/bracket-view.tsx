@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+
 import type { TournamentBracket, BracketRound, BracketMatch } from "../lib/bracket";
 
 function hasWinner(m: BracketMatch, side: 1 | 2) {
@@ -88,16 +90,128 @@ function RoundColumn({ round, roundIndex }: { round: BracketRound; roundIndex: n
 }
 
 function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [paths, setPaths] = useState<string[]>([]);
+
+  const roundNames = useMemo(() => rounds.map((r) => r.name), [rounds]);
+
+  function computePaths() {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const containerRect = el.getBoundingClientRect();
+    const nodes = Array.from(el.querySelectorAll<HTMLElement>("[data-round][data-match]"));
+
+    const byRound = new Map<number, HTMLElement[]>();
+    for (const n of nodes) {
+      const r = Number(n.dataset.round ?? "-1");
+      const m = Number(n.dataset.match ?? "-1");
+      if (!Number.isFinite(r) || !Number.isFinite(m) || r < 0 || m < 0) continue;
+      const arr = byRound.get(r) ?? [];
+      arr[m] = n;
+      byRound.set(r, arr);
+    }
+
+    const next: string[] = [];
+    const roundsCount = rounds.length;
+    for (let r = 0; r < roundsCount - 1; r++) {
+      const fromMatches = byRound.get(r) ?? [];
+      const toMatches = byRound.get(r + 1) ?? [];
+      for (let i = 0; i < fromMatches.length; i++) {
+        const from = fromMatches[i];
+        if (!from) continue;
+        const to = toMatches[Math.floor(i / 2)];
+        if (!to) continue;
+
+        const a = from.getBoundingClientRect();
+        const b = to.getBoundingClientRect();
+
+        const ax = a.right - containerRect.left;
+        const ay = a.top - containerRect.top + a.height / 2;
+        const bx = b.left - containerRect.left;
+        const by = b.top - containerRect.top + b.height / 2;
+
+        // Draw a classic bracket connector: horizontal out, vertical, horizontal in.
+        const midX = ax + Math.max(18, Math.round((bx - ax) * 0.45));
+        next.push(`M ${ax} ${ay} L ${midX} ${ay} L ${midX} ${by} L ${bx} ${by}`);
+      }
+    }
+
+    setPaths(next);
+  }
+
+  useLayoutEffect(() => {
+    computePaths();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundNames.join("|")]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    let raf = 0;
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => computePaths());
+    };
+
+    const onScroll = () => schedule();
+    const onResize = () => schedule();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+
+    const ro = new ResizeObserver(() => schedule());
+    ro.observe(el);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      ro.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundNames.join("|")]);
+
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-200">{title}</div>
         <div className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">{rounds.length} rounds</div>
       </div>
-      <div className="overflow-x-auto overflow-y-hidden rounded-2xl border border-zinc-200 bg-white/50 px-3 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30">
-        <div className="flex min-h-[240px] gap-5">
+      <div
+        ref={containerRef}
+        className="relative overflow-x-auto overflow-y-hidden rounded-2xl border border-zinc-200 bg-white/50 px-3 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30"
+      >
+        <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+          <g fill="none" stroke="currentColor" className="text-zinc-300 dark:text-zinc-800" strokeWidth={2}>
+            {paths.map((d, idx) => (
+              <path key={idx} d={d} />
+            ))}
+          </g>
+        </svg>
+
+        <div className="relative flex min-h-[240px] gap-5">
           {rounds.map((r, idx) => (
-            <RoundColumn key={`${r.name}-${idx}`} round={r} roundIndex={idx} />
+            <div key={`${r.name}-${idx}`} className="w-[220px] shrink-0">
+              <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                {r.name}
+              </div>
+              {(() => {
+                const baseGap = 10;
+                const gapPx = Math.max(10, Math.round(baseGap * Math.pow(2, idx)));
+                const padTopPx = Math.round(gapPx / 2);
+
+                return (
+                  <div className="flex flex-col" style={{ gap: `${gapPx}px`, paddingTop: `${padTopPx}px` }}>
+                    {r.matches.map((m, mIdx) => (
+                      <div key={m.id} data-round={idx} data-match={mIdx} className="relative">
+                        <MatchCard match={m} />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
           ))}
         </div>
       </div>

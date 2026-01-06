@@ -20,13 +20,6 @@ export default function MorePage() {
             </a>
           </div>
         </div>
-
-        <div className="rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/50">
-          <div className="text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Sobre</div>
-          <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            MCSR BR — Minecraft Speedrunning Brasil.
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -22,33 +22,8 @@ export default async function RankedLeaderboardPage({
   return (
     <div>
       <PageHeader
-        title="Leaderboard"
-        subtitle="Ranking por categoria. Mostra apenas a melhor run (menor tempo) de cada player."
-      />
-
-      <div className="mb-4 flex flex-wrap justify-center gap-2">
-        {CATEGORIES.map((cat) => (
-          <a
-            key={cat}
-            href={`/leaderboards/ranked?category=${encodeURIComponent(cat)}`}
-            className={
-              "rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm transition-all " +
-              (cat === selected
-                ? "border-emerald-500 bg-emerald-600 text-white"
-                : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800")
-            }
-          >
-            {cat}
-          </a>
-        ))}
-      </div>
-
-      <PlayerLeaderboardView
-        title={`Top Jogadores (${selected})`}
-        valueLabel="Tempo"
-        rows={rows}
-        uuidMap={uuidMap}
-        valueFormat="time_ms"
+        title="Ranking MCSR Ranked "
+        subtitle="NAO FIZ AINDA"
       />
     </div>
   );

@@ -48,18 +48,6 @@ export function StateMap({
       })
     );
 
-    chart.set(
-      "zoomControl",
-      am5map.ZoomControl.new(root, {
-        x: am5.percent(100),
-        centerX: am5.percent(100),
-        y: am5.percent(0),
-        centerY: am5.percent(0),
-        paddingRight: 12,
-        paddingTop: 12,
-      })
-    );
-
     const polygonSeries = chart.series.push(
       am5map.MapPolygonSeries.new(root, {
         geoJSON: am5geodata_brazilLow as any,

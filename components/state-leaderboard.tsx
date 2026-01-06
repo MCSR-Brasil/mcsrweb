@@ -78,7 +78,7 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
 
       <aside
         className={
-          "absolute right-0 top-0 h-full w-[min(92vw,420px)] border-l border-zinc-200 bg-white/85 shadow-xl backdrop-blur-sm transition-transform dark:border-zinc-800 dark:bg-zinc-950/80 " +
+          "absolute right-0 top-0 h-full w-[min(92vw,520px)] border-l border-zinc-200 bg-white/85 shadow-xl backdrop-blur-sm transition-transform dark:border-zinc-800 dark:bg-zinc-950/80 " +
           (sidebarOpen ? "translate-x-0" : "translate-x-full")
         }
       >
@@ -89,7 +89,7 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
                 <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Estado selecionado
                 </div>
-                <div className="mt-1 truncate text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-minecraft">
+                <div className="mt-1 whitespace-normal break-words text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-minecraft">
                   {selectedName} ({selectedUF})
                 </div>
               </div>
