@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { PageHeader } from "../../components/page-header";
+import { BracketView } from "../../components/bracket-view";
+import {
+  generateDoubleElimBracketFromParticipants,
+  generateSingleElimBracketFromParticipants,
+  safeParseBracketJson,
+} from "../../lib/bracket";
 import { getTournamentSnapshot } from "../../lib/repositories/tournaments";
 
 export default async function TournamentsPage() {
@@ -26,14 +32,18 @@ export default async function TournamentsPage() {
             Em andamento
           </div>
           <div className="mt-2 text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
-            {current.name}
+            <Link href={`/tournaments/${encodeURIComponent(current.id)}`} className="hover:underline">
+              {current.name}
+            </Link>
           </div>
           <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Prizepool: <span className="font-semibold">{current.prizepool}</span>
+            Prizepool: <span className="font-semibold">{current.prizepool ?? "—"}</span>
           </div>
-          <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Termina em: <span className="font-semibold">{new Date(current.endsAt).toLocaleString("pt-BR")}</span>
-          </div>
+          {current.endsAt ? (
+            <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Termina em: <span className="font-semibold">{new Date(current.endsAt).toLocaleDateString("pt-BR")}</span>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="rounded-2xl border border-zinc-200 bg-white/70 p-6 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/50">
@@ -45,6 +55,22 @@ export default async function TournamentsPage() {
           </div>
         </div>
       )}
+
+      {current && current.type === "bracket" ? (() => {
+        const bracketFromDb = safeParseBracketJson(current.bracketJson);
+        const bracketGenerated =
+          !bracketFromDb && current.participantsCsv
+            ? current.bracketFormat === "double_elim"
+              ? generateDoubleElimBracketFromParticipants(current.participantsCsv, {
+                  tournamentId: current.id,
+                  losersBracketStartsRound: current.losersBracketStartsRound ?? 1,
+                })
+              : generateSingleElimBracketFromParticipants(current.participantsCsv, current.id)
+            : null;
+
+        const bracket = bracketFromDb ?? bracketGenerated;
+        return bracket ? <BracketView bracket={bracket} /> : null;
+      })() : null}
     </div>
   );
 }

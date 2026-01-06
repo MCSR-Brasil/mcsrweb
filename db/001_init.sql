@@ -66,25 +66,16 @@ CREATE TABLE IF NOT EXISTS tournaments (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   starts_at TEXT NOT NULL,
-  ends_at TEXT NOT NULL,
+  ends_at TEXT,
+  participants_csv TEXT,
+  type TEXT NOT NULL,
+  bracket_format TEXT,
+  losers_bracket_starts_round INTEGER,
   prizepool TEXT,
-  description TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  winner TEXT,
+  bracket_json TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_tournaments_ends_at ON tournaments(ends_at);
-
-CREATE TABLE IF NOT EXISTS tournament_results (
-  tournament_id TEXT NOT NULL,
-  placement INTEGER NOT NULL,
-  player_uuid TEXT NOT NULL,
-  prize TEXT,
-  points INTEGER,
-  pb_run_id INTEGER,
-  PRIMARY KEY (tournament_id, placement),
-  FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
-  FOREIGN KEY (player_uuid) REFERENCES players(uuid) ON DELETE CASCADE,
-  FOREIGN KEY (pb_run_id) REFERENCES pb_runs(id) ON DELETE SET NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_tournament_results_player ON tournament_results(player_uuid);

@@ -20,29 +20,18 @@ type TournamentRow = {
   id: string;
   name: string;
   startsAt: string;
-  endsAt: string;
-  prizepool: string | null;
-  description?: string | null;
+  endsAt: string | null;
+  participantsCsv: string | null;
+  type: string;
+  bracketFormat?: string | null;
+  losersBracketStartsRound?: number | null;
+  prizepool?: string | null;
+  winner?: string | null;
+  bracketJson?: string | null;
 };
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
-}
-
-function toDatetimeLocalValue(isoLike: string) {
-  const s = isoLike.trim();
-  if (!s) return "";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-}
-
-function datetimeLocalToSqliteText(localValue: string) {
-  const s = localValue.trim();
-  if (!s) return "";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString();
 }
 
 function dateToSqliteNoonText(dateValue: string) {
@@ -95,8 +84,13 @@ export default function AdminPage() {
   const [tName, setTName] = useState("");
   const [tStartsAt, setTStartsAt] = useState("");
   const [tEndsAt, setTEndsAt] = useState("");
+  const [tParticipants, setTParticipants] = useState("");
+  const [tType, setTType] = useState<"event" | "btrl" | "bracket">("event");
+  const [tBracketFormat, setTBracketFormat] = useState<"single_elim" | "double_elim">("single_elim");
+  const [tLosersStart, setTLosersStart] = useState("1");
   const [tPrizepool, setTPrizepool] = useState("");
-  const [tDescription, setTDescription] = useState("");
+  const [tWinner, setTWinner] = useState("");
+  const [tBracketJson, setTBracketJson] = useState("");
 
   const [log, setLog] = useState<string[]>([]);
 
@@ -139,8 +133,8 @@ export default function AdminPage() {
     [ready, pbPlayerUUID, pbCategory, computedPbTimeMs]
   );
   const canSubmitTournament = useMemo(
-    () => ready && tId.trim() && tName.trim() && tStartsAt.trim() && tEndsAt.trim(),
-    [ready, tId, tName, tStartsAt, tEndsAt]
+    () => ready && tId.trim() && tName.trim() && tStartsAt.trim() && tType.trim(),
+    [ready, tId, tName, tStartsAt, tType]
   );
 
   function pushLog(line: string) {
@@ -373,19 +367,59 @@ export default function AdminPage() {
             />
 
             <input
-              type="datetime-local"
+              type="date"
               value={tStartsAt}
               onChange={(e) => setTStartsAt(e.target.value)}
-              placeholder="StartsAt"
+              placeholder="Start date"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
             <input
-              type="datetime-local"
+              type="date"
               value={tEndsAt}
               onChange={(e) => setTEndsAt(e.target.value)}
-              placeholder="EndsAt"
+              placeholder="End date (opcional)"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
+
+            <textarea
+              value={tParticipants}
+              onChange={(e) => setTParticipants(e.target.value)}
+              placeholder="Participants (CSV)"
+              rows={3}
+              className="font-minecraft w-full resize-y rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <select
+              value={tType}
+              onChange={(e) => setTType((e.target.value as any) || "event")}
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            >
+              <option value="event">Event</option>
+              <option value="btrl">BTRL</option>
+              <option value="bracket">Bracket</option>
+            </select>
+
+            {tType === "bracket" ? (
+              <>
+                <select
+                  value={tBracketFormat}
+                  onChange={(e) => setTBracketFormat((e.target.value as any) || "single_elim")}
+                  className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                >
+                  <option value="single_elim">Single Elimination</option>
+                  <option value="double_elim">Double Elimination</option>
+                </select>
+
+                <input
+                  inputMode="numeric"
+                  value={tLosersStart}
+                  onChange={(e) => setTLosersStart(e.target.value)}
+                  placeholder="Losers bracket starts round (ex: 2)"
+                  className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+                />
+              </>
+            ) : null}
+
             <input
               value={tPrizepool}
               onChange={(e) => setTPrizepool(e.target.value)}
@@ -394,10 +428,18 @@ export default function AdminPage() {
             />
 
             <input
-              value={tDescription}
-              onChange={(e) => setTDescription(e.target.value)}
-              placeholder="Description (opcional)"
+              value={tWinner}
+              onChange={(e) => setTWinner(e.target.value)}
+              placeholder="Winner (opcional)"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <textarea
+              value={tBracketJson}
+              onChange={(e) => setTBracketJson(e.target.value)}
+              placeholder="Bracket JSON (opcional)"
+              rows={6}
+              className="font-minecraft w-full resize-y rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
 
             <button
@@ -408,10 +450,16 @@ export default function AdminPage() {
                   await postJson("/api/admin/tournaments", {
                     id: tId,
                     name: tName,
-                    startsAt: datetimeLocalToSqliteText(tStartsAt),
-                    endsAt: datetimeLocalToSqliteText(tEndsAt),
+                    startsAt: dateToSqliteNoonText(tStartsAt),
+                    endsAt: tEndsAt ? dateToSqliteNoonText(tEndsAt) : null,
+                    participantsCsv: tParticipants || null,
+                    type: tType,
+                    bracketFormat: tType === "bracket" ? tBracketFormat : null,
+                    losersBracketStartsRound:
+                      tType === "bracket" ? (Number.isFinite(Number(tLosersStart)) ? Math.floor(Number(tLosersStart)) : null) : null,
                     prizepool: tPrizepool || null,
-                    description: tDescription || null,
+                    winner: tWinner || null,
+                    bracketJson: tBracketJson || null,
                   } satisfies Partial<TournamentRow>);
                   pushLog(`Torneio salvo: ${tName}`);
                 } catch (e) {

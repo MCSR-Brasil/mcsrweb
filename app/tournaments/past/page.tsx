@@ -22,18 +22,20 @@ export default async function PastTournamentsPage() {
 
       <div className="grid grid-cols-1 gap-3">
         {rows.map((t) => (
-          <div
+          <Link
             key={t.id}
-            className="rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/50"
+            href={`/tournaments/${encodeURIComponent(t.id)}`}
+            className="block rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950/50"
           >
-            <div className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50">{t.name}</div>
+            <div className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50 hover:underline">{t.name}</div>
             <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Prizepool: <span className="font-semibold">{t.prizepool}</span>
+              Prizepool: <span className="font-semibold">{t.prizepool ?? "—"}</span>
             </div>
             <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Finalizado em: <span className="font-semibold">{new Date(t.endsAt).toLocaleString("pt-BR")}</span>
+              Finalizado em:{" "}
+              <span className="font-semibold">{t.endsAt ? new Date(t.endsAt).toLocaleDateString("pt-BR") : "—"}</span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
