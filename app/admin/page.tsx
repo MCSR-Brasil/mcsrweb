@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  generateDoubleElimBracketFromParticipants,
+  generateSingleElimBracketFromParticipants,
+} from "../../lib/bracket";
+
 type PlayerRow = { uuid: string; name: string; stateUF: string | null };
 
 type PbRunRow = {
@@ -441,6 +446,41 @@ export default function AdminPage() {
               rows={6}
               className="font-minecraft w-full resize-y rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                disabled={tType !== "bracket" || !tParticipants.trim()}
+                onClick={() => {
+                  if (tType !== "bracket") return;
+                  const losersStart = Number.isFinite(Number(tLosersStart)) ? Math.floor(Number(tLosersStart)) : 1;
+                  const bracket =
+                    tBracketFormat === "double_elim"
+                      ? generateDoubleElimBracketFromParticipants(tParticipants, {
+                          tournamentId: tId || "t",
+                          losersBracketStartsRound: losersStart,
+                        })
+                      : generateSingleElimBracketFromParticipants(tParticipants, tId || "t");
+                  setTBracketJson(JSON.stringify(bracket, null, 2));
+                }}
+                className={
+                  "font-minecraft w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider shadow-sm transition-all " +
+                  (tType === "bracket" && tParticipants.trim()
+                    ? "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500")
+                }
+              >
+                Gerar Bracket JSON
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTBracketJson("")}
+                className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-wider text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                Limpar JSON
+              </button>
+            </div>
 
             <button
               type="button"
