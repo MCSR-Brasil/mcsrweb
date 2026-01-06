@@ -92,6 +92,7 @@ function RoundColumn({ round, roundIndex }: { round: BracketRound; roundIndex: n
 function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [paths, setPaths] = useState<string[]>([]);
+  const [svgSize, setSvgSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   const roundNames = useMemo(() => rounds.map((r) => r.name), [rounds]);
 
@@ -101,6 +102,10 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
 
     const containerRect = el.getBoundingClientRect();
     const nodes = Array.from(el.querySelectorAll<HTMLElement>("[data-round][data-match]"));
+
+    const w = Math.max(0, Math.ceil(el.scrollWidth));
+    const h = Math.max(0, Math.ceil(el.scrollHeight));
+    setSvgSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
 
     const byRound = new Map<number, HTMLElement[]>();
     for (const n of nodes) {
@@ -126,10 +131,10 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
         const a = from.getBoundingClientRect();
         const b = to.getBoundingClientRect();
 
-        const ax = a.right - containerRect.left;
-        const ay = a.top - containerRect.top + a.height / 2;
-        const bx = b.left - containerRect.left;
-        const by = b.top - containerRect.top + b.height / 2;
+        const ax = a.right - containerRect.left + el.scrollLeft;
+        const ay = a.top - containerRect.top + el.scrollTop + a.height / 2;
+        const bx = b.left - containerRect.left + el.scrollLeft;
+        const by = b.top - containerRect.top + el.scrollTop + b.height / 2;
 
         // Draw a classic bracket connector: horizontal out, vertical, horizontal in.
         const midX = ax + Math.max(18, Math.round((bx - ax) * 0.45));
@@ -180,10 +185,16 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
       </div>
       <div
         ref={containerRef}
-        className="relative overflow-x-auto overflow-y-hidden rounded-2xl border border-zinc-200 bg-white/50 px-3 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30"
+        className="relative overflow-auto rounded-2xl border border-zinc-200 bg-white/50 px-3 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30"
         style={{ height: "min(70vh, 560px)" }}
       >
-        <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+        <svg
+          className="pointer-events-none absolute left-0 top-0"
+          aria-hidden="true"
+          width={svgSize.w || 0}
+          height={svgSize.h || 0}
+          viewBox={`0 0 ${svgSize.w || 0} ${svgSize.h || 0}`}
+        >
           <g fill="none" stroke="currentColor" className="text-zinc-300 dark:text-zinc-800" strokeWidth={2}>
             {paths.map((d, idx) => (
               <path key={idx} d={d} />
