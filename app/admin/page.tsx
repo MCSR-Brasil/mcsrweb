@@ -11,6 +11,9 @@ type PbRunRow = {
   timeMs: number;
   achievedAt: string | null;
   link: string | null;
+  description?: string | null;
+  seed?: string | null;
+  bastion?: string | null;
 };
 
 type TournamentRow = {
@@ -19,7 +22,42 @@ type TournamentRow = {
   startsAt: string;
   endsAt: string;
   prizepool: string | null;
+  description?: string | null;
 };
+
+type ScoreRow = {
+  playerUUID: string;
+  value: number;
+  source?: string | null;
+};
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function toDatetimeLocalValue(isoLike: string) {
+  const s = isoLike.trim();
+  if (!s) return "";
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+function datetimeLocalToSqliteText(localValue: string) {
+  const s = localValue.trim();
+  if (!s) return "";
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString();
+}
+
+function durationPartsToMs(minStr: string, secStr: string, msStr: string) {
+  const min = Number(minStr || 0);
+  const sec = Number(secStr || 0);
+  const ms = Number(msStr || 0);
+  if (![min, sec, ms].every((n) => Number.isFinite(n) && n >= 0)) return NaN;
+  return Math.floor(min * 60_000 + sec * 1000 + ms);
+}
 
 function authHeaders(secret: string): HeadersInit {
   const s = secret.trim();
@@ -34,12 +72,19 @@ export default function AdminPage() {
   const [pUuid, setPUuid] = useState("");
   const [pName, setPName] = useState("");
   const [pStateUF, setPStateUF] = useState("");
+  const [pCountryCode, setPCountryCode] = useState("BR");
 
   // PB form
   const [pbPlayerUUID, setPbPlayerUUID] = useState("");
   const [pbCategory, setPbCategory] = useState("Any%");
-  const [pbTimeMs, setPbTimeMs] = useState("");
+  const [pbTimeMin, setPbTimeMin] = useState("0");
+  const [pbTimeSec, setPbTimeSec] = useState("0");
+  const [pbTimeMs, setPbTimeMs] = useState("0");
+  const [pbAchievedAt, setPbAchievedAt] = useState("");
   const [pbLink, setPbLink] = useState("");
+  const [pbDescription, setPbDescription] = useState("");
+  const [pbSeed, setPbSeed] = useState("");
+  const [pbBastion, setPbBastion] = useState("");
 
   // Tournament form
   const [tId, setTId] = useState("");
@@ -47,17 +92,38 @@ export default function AdminPage() {
   const [tStartsAt, setTStartsAt] = useState("");
   const [tEndsAt, setTEndsAt] = useState("");
   const [tPrizepool, setTPrizepool] = useState("");
+  const [tDescription, setTDescription] = useState("");
+
+  // Scores form
+  const [rankedPlayerUUID, setRankedPlayerUUID] = useState("");
+  const [rankedValue, setRankedValue] = useState("");
+  const [rankedSource, setRankedSource] = useState("");
+
+  const [rsgPlayerUUID, setRsgPlayerUUID] = useState("");
+  const [rsgValue, setRsgValue] = useState("");
+  const [rsgCategory, setRsgCategory] = useState("1.16");
 
   const [log, setLog] = useState<string[]>([]);
 
   const canSubmitPlayer = useMemo(() => ready && pUuid.trim() && pName.trim(), [ready, pUuid, pName]);
+  const computedPbTimeMs = useMemo(() => durationPartsToMs(pbTimeMin, pbTimeSec, pbTimeMs), [pbTimeMin, pbTimeSec, pbTimeMs]);
   const canSubmitPb = useMemo(
-    () => ready && pbPlayerUUID.trim() && pbCategory.trim() && Number(pbTimeMs) > 0,
-    [ready, pbPlayerUUID, pbCategory, pbTimeMs]
+    () => ready && pbPlayerUUID.trim() && pbCategory.trim() && Number.isFinite(computedPbTimeMs) && computedPbTimeMs > 0,
+    [ready, pbPlayerUUID, pbCategory, computedPbTimeMs]
   );
   const canSubmitTournament = useMemo(
     () => ready && tId.trim() && tName.trim() && tStartsAt.trim() && tEndsAt.trim(),
     [ready, tId, tName, tStartsAt, tEndsAt]
+  );
+
+  const canSubmitRanked = useMemo(
+    () => ready && rankedPlayerUUID.trim() && Number(rankedValue) > 0,
+    [ready, rankedPlayerUUID, rankedValue]
+  );
+
+  const canSubmitRsg = useMemo(
+    () => ready && rsgPlayerUUID.trim() && Number(rsgValue) > 0 && rsgCategory.trim().length > 0,
+    [ready, rsgPlayerUUID, rsgValue, rsgCategory]
   );
 
   function pushLog(line: string) {
@@ -115,6 +181,13 @@ export default function AdminPage() {
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
 
+            <input
+              value={pCountryCode}
+              onChange={(e) => setPCountryCode(e.target.value)}
+              placeholder="Country Code (ex: BR)"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
             <button
               type="button"
               disabled={!canSubmitPlayer}
@@ -124,7 +197,8 @@ export default function AdminPage() {
                     uuid: pUuid,
                     name: pName,
                     stateUF: pStateUF || null,
-                  } satisfies PlayerRow);
+                    countryCode: pCountryCode || null,
+                  } satisfies PlayerRow & { countryCode?: string | null });
                   pushLog(`Player salvo: ${pName}`);
                 } catch (e) {
                   pushLog(`Erro: ${e instanceof Error ? e.message : "failed"}`);
@@ -160,16 +234,63 @@ export default function AdminPage() {
               placeholder="Categoria (ex: Any%)"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
+
+            <div className="grid grid-cols-3 gap-2">
+              <input
+                inputMode="numeric"
+                value={pbTimeMin}
+                onChange={(e) => setPbTimeMin(e.target.value)}
+                placeholder="Min"
+                className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+              />
+              <input
+                inputMode="numeric"
+                value={pbTimeSec}
+                onChange={(e) => setPbTimeSec(e.target.value)}
+                placeholder="Sec"
+                className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+              />
+              <input
+                inputMode="numeric"
+                value={pbTimeMs}
+                onChange={(e) => setPbTimeMs(e.target.value)}
+                placeholder="Ms"
+                className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+              />
+            </div>
+
             <input
-              value={pbTimeMs}
-              onChange={(e) => setPbTimeMs(e.target.value)}
-              placeholder="Time (ms)"
+              type="datetime-local"
+              value={pbAchievedAt}
+              onChange={(e) => setPbAchievedAt(e.target.value)}
+              placeholder="Achieved At"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
             <input
               value={pbLink}
               onChange={(e) => setPbLink(e.target.value)}
               placeholder="Link (opcional)"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <input
+              value={pbDescription}
+              onChange={(e) => setPbDescription(e.target.value)}
+              placeholder="Description (opcional)"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <input
+              value={pbSeed}
+              onChange={(e) => setPbSeed(e.target.value)}
+              placeholder="Seed (opcional)"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <input
+              value={pbBastion}
+              onChange={(e) => setPbBastion(e.target.value)}
+              placeholder="Bastion (opcional)"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
 
@@ -181,8 +302,12 @@ export default function AdminPage() {
                   await postJson("/api/admin/pb-runs", {
                     playerUUID: pbPlayerUUID,
                     category: pbCategory,
-                    timeMs: Number(pbTimeMs),
+                    timeMs: computedPbTimeMs,
+                    achievedAt: pbAchievedAt ? datetimeLocalToSqliteText(pbAchievedAt) : null,
                     link: pbLink || null,
+                    description: pbDescription || null,
+                    seed: pbSeed || null,
+                    bastion: pbBastion || null,
                   } satisfies Partial<PbRunRow>);
                   pushLog(`PB salvo: ${pbPlayerUUID} ${pbCategory}`);
                 } catch (e) {
@@ -219,22 +344,32 @@ export default function AdminPage() {
               placeholder="Nome"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
+
             <input
+              type="datetime-local"
               value={tStartsAt}
               onChange={(e) => setTStartsAt(e.target.value)}
-              placeholder="StartsAt (ISO)"
+              placeholder="StartsAt"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
             <input
+              type="datetime-local"
               value={tEndsAt}
               onChange={(e) => setTEndsAt(e.target.value)}
-              placeholder="EndsAt (ISO)"
+              placeholder="EndsAt"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
             <input
               value={tPrizepool}
               onChange={(e) => setTPrizepool(e.target.value)}
               placeholder="Prizepool (opcional)"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <input
+              value={tDescription}
+              onChange={(e) => setTDescription(e.target.value)}
+              placeholder="Description (opcional)"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
 
@@ -246,9 +381,10 @@ export default function AdminPage() {
                   await postJson("/api/admin/tournaments", {
                     id: tId,
                     name: tName,
-                    startsAt: tStartsAt,
-                    endsAt: tEndsAt,
+                    startsAt: datetimeLocalToSqliteText(tStartsAt),
+                    endsAt: datetimeLocalToSqliteText(tEndsAt),
                     prizepool: tPrizepool || null,
+                    description: tDescription || null,
                   } satisfies Partial<TournamentRow>);
                   pushLog(`Torneio salvo: ${tName}`);
                 } catch (e) {
@@ -258,6 +394,115 @@ export default function AdminPage() {
               className={
                 "font-minecraft mt-2 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider shadow-sm transition-all " +
                 (canSubmitTournament
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                  : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500")
+              }
+            >
+              Salvar
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/50">
+          <div className="font-minecraft text-sm font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Ranked Scores
+          </div>
+
+          <div className="mt-3 space-y-2">
+            <input
+              value={rankedPlayerUUID}
+              onChange={(e) => setRankedPlayerUUID(e.target.value)}
+              placeholder="Player UUID"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+            <input
+              inputMode="numeric"
+              value={rankedValue}
+              onChange={(e) => setRankedValue(e.target.value)}
+              placeholder="Value"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+            <input
+              value={rankedSource}
+              onChange={(e) => setRankedSource(e.target.value)}
+              placeholder="Source (opcional)"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <button
+              type="button"
+              disabled={!canSubmitRanked}
+              onClick={async () => {
+                try {
+                  await postJson("/api/admin/ranked-scores", {
+                    playerUUID: rankedPlayerUUID,
+                    value: Number(rankedValue),
+                    source: rankedSource || null,
+                  } satisfies ScoreRow);
+                  pushLog(`Ranked salvo: ${rankedPlayerUUID}`);
+                } catch (e) {
+                  pushLog(`Erro: ${e instanceof Error ? e.message : "failed"}`);
+                }
+              }}
+              className={
+                "font-minecraft mt-2 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider shadow-sm transition-all " +
+                (canSubmitRanked
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                  : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500")
+              }
+            >
+              Salvar
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/50">
+          <div className="font-minecraft text-sm font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            RSG Scores
+          </div>
+
+          <div className="mt-3 space-y-2">
+            <input
+              value={rsgPlayerUUID}
+              onChange={(e) => setRsgPlayerUUID(e.target.value)}
+              placeholder="Player UUID"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+            <input
+              inputMode="numeric"
+              value={rsgValue}
+              onChange={(e) => setRsgValue(e.target.value)}
+              placeholder="Value"
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            />
+
+            <select
+              value={rsgCategory}
+              onChange={(e) => setRsgCategory(e.target.value)}
+              className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            >
+              <option value="1.16">1.16</option>
+              <option value="1.16 SSG">1.16 SSG</option>
+            </select>
+
+            <button
+              type="button"
+              disabled={!canSubmitRsg}
+              onClick={async () => {
+                try {
+                  await postJson("/api/admin/rsg-scores", {
+                    playerUUID: rsgPlayerUUID,
+                    value: Number(rsgValue),
+                    source: rsgCategory,
+                  } satisfies ScoreRow);
+                  pushLog(`RSG salvo: ${rsgPlayerUUID} (${rsgCategory})`);
+                } catch (e) {
+                  pushLog(`Erro: ${e instanceof Error ? e.message : "failed"}`);
+                }
+              }}
+              className={
+                "font-minecraft mt-2 w-full rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider shadow-sm transition-all " +
+                (canSubmitRsg
                   ? "bg-emerald-600 text-white hover:bg-emerald-700"
                   : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500")
               }

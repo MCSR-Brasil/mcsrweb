@@ -46,6 +46,8 @@ export async function POST(req: Request) {
   const name = String(body.name ?? "").trim();
   const startsAt = String(body.startsAt ?? "").trim();
   const endsAt = String(body.endsAt ?? "").trim();
+  const prizepool = body.prizepool == null ? null : String(body.prizepool).trim();
+  const description = body.description == null ? null : String(body.description).trim();
 
   if (!id || !name || !startsAt || !endsAt) {
     return NextResponse.json(
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
 
   await db.execute({
     sql: "insert into tournaments(id, name, starts_at, ends_at, prizepool, description) values (?, ?, ?, ?, ?, ?) on conflict(id) do update set name = excluded.name, starts_at = excluded.starts_at, ends_at = excluded.ends_at, prizepool = excluded.prizepool, description = excluded.description",
-    args: [id, name, startsAt, endsAt, body.prizepool ?? null, body.description ?? null],
+    args: [id, name, startsAt, endsAt, prizepool, description],
   });
 
   return NextResponse.json({ ok: true });

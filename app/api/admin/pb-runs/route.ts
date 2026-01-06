@@ -13,6 +13,18 @@ type CreatePbRunBody = {
   bastion?: string | null;
 };
 
+type PbRun = {
+  id: number;
+  playerUUID: string;
+  category: string;
+  timeMs: number;
+  achievedAt?: string | null;
+  link?: string | null;
+  description?: string | null;
+  seed?: string | null;
+  bastion?: string | null;
+};
+
 export async function GET(req: Request) {
   const auth = requireAdmin(req);
   if (auth) return auth;

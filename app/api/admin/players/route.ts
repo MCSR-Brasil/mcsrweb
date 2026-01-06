@@ -6,6 +6,7 @@ type PlayerUpsertBody = {
   uuid: string;
   name: string;
   stateUF?: string | null;
+  countryCode?: string | null;
 };
 
 export async function GET(req: Request) {
@@ -46,14 +47,15 @@ export async function POST(req: Request) {
   const uuid = String(body.uuid ?? "").trim();
   const name = String(body.name ?? "").trim();
   const stateUF = body.stateUF == null ? null : String(body.stateUF).trim().toUpperCase();
+  const countryCode = body.countryCode == null ? null : String(body.countryCode).trim().toUpperCase();
 
   if (!uuid || !name) {
     return NextResponse.json({ error: "uuid and name are required" }, { status: 400 });
   }
 
   await db.execute({
-    sql: "insert into players(uuid, name, state_uf) values (?, ?, ?) on conflict(uuid) do update set name = excluded.name, state_uf = excluded.state_uf, updated_at = datetime('now')",
-    args: [uuid, name, stateUF],
+    sql: "insert into players(uuid, name, state_uf, country_code) values (?, ?, ?, coalesce(?, 'BR')) on conflict(uuid) do update set name = excluded.name, state_uf = excluded.state_uf, country_code = excluded.country_code, updated_at = datetime('now')",
+    args: [uuid, name, stateUF, countryCode],
   });
 
   return NextResponse.json({ ok: true });
