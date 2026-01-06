@@ -23,6 +23,9 @@ export default async function RsgLeaderboardPage({
     stateUF: r.stateUF,
     achievedAt: r.achievedAt,
     link: r.link,
+    description: r.description,
+    seed: r.seed,
+    bastion: r.bastion,
   }));
 
   return (

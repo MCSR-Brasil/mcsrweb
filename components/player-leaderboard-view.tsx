@@ -12,6 +12,9 @@ export type PlayerRow = {
   stateUF?: string | null;
   achievedAt?: string | null;
   link?: string | null;
+  description?: string | null;
+  seed?: string | null;
+  bastion?: string | null;
 };
 
 type ValueFormat = "number" | "time_ms";
@@ -132,7 +135,7 @@ export function PlayerLeaderboardView({
 
                 <div className="p-5">
                   <div className="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Detalhes</div>
-                  <div className="mt-3 space-y-3">
+                  <div className="mt-3 max-h-[min(70vh,720px)] space-y-3 overflow-y-auto pr-1">
                     <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
                       <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Tempo</div>
                       <div className="mt-1 text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
@@ -164,6 +167,32 @@ export function PlayerLeaderboardView({
                         >
                           {selected.link}
                         </a>
+                      ) : (
+                        <div className="mt-1 text-sm font-black text-zinc-900 dark:text-zinc-50">—</div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                        <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Bastion</div>
+                        <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">
+                          {selected.bastion ? selected.bastion : "—"}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                        <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Seed</div>
+                        <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">
+                          {selected.seed ? selected.seed : "—"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                      <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Descrição</div>
+                      {selected.description ? (
+                        <div className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap break-words text-sm font-semibold leading-relaxed text-zinc-800 dark:text-zinc-100">
+                          {selected.description}
+                        </div>
                       ) : (
                         <div className="mt-1 text-sm font-black text-zinc-900 dark:text-zinc-50">—</div>
                       )}
@@ -277,20 +306,60 @@ function getEmbedSrc(link: string | null): string | null {
   const host = url.hostname.toLowerCase();
 
   if (host === "youtu.be") {
-    const id = url.pathname.replace("/", "").trim();
-    return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}` : null;
+    const id = url.pathname.split("/").filter(Boolean)[0] ?? "";
+    return id ? makeYouTubeEmbedUrl(id, url.searchParams.get("t")) : null;
   }
 
-  if (host.endsWith("youtube.com")) {
-    const id = url.searchParams.get("v") ?? "";
-    if (id) return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
+  if (host.endsWith("youtube.com") || host.endsWith("youtube-nocookie.com")) {
+    const v = (url.searchParams.get("v") ?? "").trim();
+    if (v) return makeYouTubeEmbedUrl(v, url.searchParams.get("t") ?? url.searchParams.get("start"));
+
     const parts = url.pathname.split("/").filter(Boolean);
-    const i = parts.findIndex((p) => p === "embed");
-    if (i >= 0 && parts[i + 1]) return `https://www.youtube.com/embed/${encodeURIComponent(parts[i + 1])}`;
+    const embedIdx = parts.findIndex((p) => p === "embed");
+    if (embedIdx >= 0 && parts[embedIdx + 1]) {
+      return makeYouTubeEmbedUrl(parts[embedIdx + 1], url.searchParams.get("start"));
+    }
+
+    const shortsIdx = parts.findIndex((p) => p === "shorts");
+    if (shortsIdx >= 0 && parts[shortsIdx + 1]) {
+      return makeYouTubeEmbedUrl(parts[shortsIdx + 1], url.searchParams.get("t") ?? url.searchParams.get("start"));
+    }
+
+    const liveIdx = parts.findIndex((p) => p === "live");
+    if (liveIdx >= 0 && parts[liveIdx + 1]) {
+      return makeYouTubeEmbedUrl(parts[liveIdx + 1], url.searchParams.get("t") ?? url.searchParams.get("start"));
+    }
+
     return null;
   }
 
   return null;
+}
+
+function makeYouTubeEmbedUrl(idRaw: string, startRaw: string | null): string {
+  const id = idRaw.split("?")[0]?.trim() ?? "";
+  const start = parseYouTubeStart(startRaw);
+  const embed = new URL(`https://www.youtube.com/embed/${encodeURIComponent(id)}`);
+  embed.searchParams.set("rel", "0");
+  embed.searchParams.set("modestbranding", "1");
+  embed.searchParams.set("playsinline", "1");
+  if (start && start > 0) embed.searchParams.set("start", String(start));
+  return embed.toString();
+}
+
+function parseYouTubeStart(raw: string | null): number | null {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+
+  if (/^\d+$/.test(s)) return Math.max(0, Number(s));
+
+  const m = s.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/i);
+  if (!m) return null;
+  const h = Number(m[1] ?? 0);
+  const min = Number(m[2] ?? 0);
+  const sec = Number(m[3] ?? 0);
+  const total = h * 3600 + min * 60 + sec;
+  return Number.isFinite(total) && total > 0 ? total : null;
 }
 
 function formatValue(value: number, fmt: ValueFormat | undefined) {

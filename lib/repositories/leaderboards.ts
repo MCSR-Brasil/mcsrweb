@@ -12,6 +12,9 @@ export type RunLeaderboardRow = {
   stateUF?: string | null;
   achievedAt?: string | null;
   link?: string | null;
+  description?: string | null;
+  seed?: string | null;
+  bastion?: string | null;
 };
 
 const mockRuns: RunLeaderboardRow[] = [
@@ -42,7 +45,7 @@ export async function getRunsLeaderboard(category: string, limit = 100): Promise
 
   try {
     const res = await db.execute({
-      sql: "select name, time_ms as timeMs, state_uf as stateUF, achieved_at as achievedAt, link as link from v_leaderboard_runs where category = ? order by time_ms asc limit ?",
+      sql: "select p.name as name, p.state_uf as stateUF, b.time_ms as timeMs, b.achieved_at as achievedAt, b.link as link, b.description as description, b.seed as seed, b.bastion as bastion from v_player_best_runs b join players p on p.uuid = b.player_uuid where b.category = ? order by b.time_ms asc limit ?",
       args: [cat, limit],
     });
 
@@ -52,6 +55,9 @@ export async function getRunsLeaderboard(category: string, limit = 100): Promise
       stateUF: r.stateUF ? String(r.stateUF) : null,
       achievedAt: r.achievedAt ? String(r.achievedAt) : null,
       link: r.link ? String(r.link) : null,
+      description: r.description ? String(r.description) : null,
+      seed: r.seed ? String(r.seed) : null,
+      bastion: r.bastion ? String(r.bastion) : null,
     }));
   } catch {
     return mockRuns.slice(0, limit);
