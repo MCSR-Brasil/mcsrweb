@@ -17,7 +17,13 @@ export default async function RsgLeaderboardPage({
     : "1.16";
 
   const [runs, uuidMap] = await Promise.all([getRunsLeaderboard(selected, 100), readUUIDMap()]);
-  const rows = runs.map((r) => ({ name: r.name, value: r.timeMs, stateUF: r.stateUF }));
+  const rows = runs.map((r) => ({
+    name: r.name,
+    value: r.timeMs,
+    stateUF: r.stateUF,
+    achievedAt: r.achievedAt,
+    link: r.link,
+  }));
 
   return (
     <div>

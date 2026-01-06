@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+
 import { normalizeName } from "../lib/normalize";
 import type { UUIDMap } from "../lib/uuids";
 import { StateFlag } from "./state-flag";
@@ -8,6 +10,8 @@ export type PlayerRow = {
   name: string;
   value: number;
   stateUF?: string | null;
+  achievedAt?: string | null;
+  link?: string | null;
 };
 
 type ValueFormat = "number" | "time_ms";
@@ -32,6 +36,22 @@ export function PlayerLeaderboardView({
   uuidMap: UUIDMap;
   valueFormat?: ValueFormat;
 }) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<PlayerRow | null>(null);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setSelected(null);
+      }
+    }
+    if (open) window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  const selectedEmbed = useMemo(() => getEmbedSrc(selected?.link ?? null), [selected?.link]);
+
   return (
     <div className="space-y-3">
       <h2 className="mb-6 text-center text-2xl font-bold text-zinc-900 dark:text-zinc-50">{title}</h2>
@@ -44,9 +64,117 @@ export function PlayerLeaderboardView({
             uuidMap={uuidMap}
             valueLabel={valueLabel}
             valueFormat={valueFormat}
+            onClick={
+              p.link
+                ? () => {
+                    setSelected(p);
+                    setOpen(true);
+                  }
+                : undefined
+            }
           />
         ))}
       </div>
+
+      {open && selected ? (
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60"
+            onClick={() => {
+              setOpen(false);
+              setSelected(null);
+            }}
+            aria-label="Close"
+          />
+
+          <div className="absolute left-1/2 top-1/2 w-[min(1100px,94vw)] -translate-x-1/2 -translate-y-1/2">
+            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-black text-zinc-900 dark:text-zinc-50">{selected.name}</div>
+                  <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    {valueLabel ? valueLabel + ": " : ""}
+                    {formatValue(selected.value, valueFormat)}
+                    {selected.stateUF ? ` • ${selected.stateUF}` : ""}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    setSelected(null);
+                  }}
+                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-black text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  Fechar
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-0 md:grid-cols-2">
+                <div className="bg-black">
+                  <div className="aspect-video w-full">
+                    {selectedEmbed ? (
+                      <iframe
+                        src={selectedEmbed}
+                        className="h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm font-semibold text-zinc-200">
+                        Não foi possível embutir este link.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  <div className="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Detalhes</div>
+                  <div className="mt-3 space-y-3">
+                    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                      <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Tempo</div>
+                      <div className="mt-1 text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                        {formatValue(selected.value, valueFormat)}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                        <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Jogador</div>
+                        <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">{selected.name}</div>
+                      </div>
+                      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                        <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Data</div>
+                        <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">
+                          {selected.achievedAt ? new Date(selected.achievedAt).toLocaleDateString("pt-BR") : "—"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                      <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Link</div>
+                      {selected.link ? (
+                        <a
+                          href={selected.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 block truncate text-sm font-black text-emerald-700 hover:underline dark:text-emerald-400"
+                        >
+                          {selected.link}
+                        </a>
+                      ) : (
+                        <div className="mt-1 text-sm font-black text-zinc-900 dark:text-zinc-50">—</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -57,12 +185,14 @@ function PlayerCard({
   uuidMap,
   valueLabel,
   valueFormat,
+  onClick,
 }: {
   player: PlayerRow;
   rank: number;
   uuidMap: UUIDMap;
   valueLabel: string;
   valueFormat?: ValueFormat;
+  onClick?: (() => void) | undefined;
 }) {
   const paneColors = rankColor(rank - 1);
   const placeholderUUIDs = [
@@ -80,7 +210,14 @@ function PlayerCard({
   const bustUrl = `https://skins.mcstats.com/bust/${finalUUID}`;
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-lg hover:scale-[1.01] dark:border-zinc-800 dark:bg-zinc-900">
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "group relative w-full overflow-hidden rounded-xl border border-zinc-200 bg-white text-left shadow-sm transition-all dark:border-zinc-800 dark:bg-zinc-900 " +
+        (onClick ? "hover:shadow-lg hover:scale-[1.01]" : "")
+      }
+    >
       <div className="flex items-stretch">
         <div
           className={`relative isolate w-32 shrink-0 bg-gradient-to-br ${paneColors} sm:w-48 md:w-64`}
@@ -123,8 +260,37 @@ function PlayerCard({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
+}
+
+function getEmbedSrc(link: string | null): string | null {
+  const raw = String(link ?? "").trim();
+  if (!raw) return null;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+
+  const host = url.hostname.toLowerCase();
+
+  if (host === "youtu.be") {
+    const id = url.pathname.replace("/", "").trim();
+    return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}` : null;
+  }
+
+  if (host.endsWith("youtube.com")) {
+    const id = url.searchParams.get("v") ?? "";
+    if (id) return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
+    const parts = url.pathname.split("/").filter(Boolean);
+    const i = parts.findIndex((p) => p === "embed");
+    if (i >= 0 && parts[i + 1]) return `https://www.youtube.com/embed/${encodeURIComponent(parts[i + 1])}`;
+    return null;
+  }
+
+  return null;
 }
 
 function formatValue(value: number, fmt: ValueFormat | undefined) {
