@@ -5,18 +5,6 @@ import { readUUIDMap } from "../../../lib/uuids";
 
 const CATEGORIES = ["1.16", "1.16 SSG"] as const;
 
-function formatTimeMs(ms: number) {
-  const v = Math.max(0, Math.floor(ms));
-  const totalSeconds = Math.floor(v / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  const millis = v % 1000;
-  const mm = String(minutes).padStart(2, "0");
-  const ss = String(seconds).padStart(2, "0");
-  const mmm = String(millis).padStart(3, "0");
-  return `${mm}:${ss}.${mmm}`;
-}
-
 export default async function RankedLeaderboardPage({
   searchParams,
 }: {
@@ -58,7 +46,7 @@ export default async function RankedLeaderboardPage({
         valueLabel="Tempo"
         rows={rows}
         uuidMap={uuidMap}
-        formatValue={formatTimeMs}
+        valueFormat="time_ms"
       />
     </div>
   );

@@ -10,6 +10,8 @@ export type PlayerRow = {
   stateUF?: string | null;
 };
 
+type ValueFormat = "number" | "time_ms";
+
 function rankColor(index: number) {
   if (index === 0) return "from-yellow-400 to-amber-500";
   if (index === 1) return "from-zinc-300 to-zinc-400";
@@ -22,13 +24,13 @@ export function PlayerLeaderboardView({
   valueLabel,
   rows,
   uuidMap,
-  formatValue,
+  valueFormat,
 }: {
   title: string;
   valueLabel: string;
   rows: PlayerRow[];
   uuidMap: UUIDMap;
-  formatValue?: (value: number) => string;
+  valueFormat?: ValueFormat;
 }) {
   return (
     <div className="space-y-3">
@@ -41,7 +43,7 @@ export function PlayerLeaderboardView({
             rank={i + 1}
             uuidMap={uuidMap}
             valueLabel={valueLabel}
-            formatValue={formatValue}
+            valueFormat={valueFormat}
           />
         ))}
       </div>
@@ -54,13 +56,13 @@ function PlayerCard({
   rank,
   uuidMap,
   valueLabel,
-  formatValue,
+  valueFormat,
 }: {
   player: PlayerRow;
   rank: number;
   uuidMap: UUIDMap;
   valueLabel: string;
-  formatValue?: (value: number) => string;
+  valueFormat?: ValueFormat;
 }) {
   const paneColors = rankColor(rank - 1);
   const placeholderUUIDs = [
@@ -115,7 +117,7 @@ function PlayerCard({
           </div>
           <div className="text-right">
             <div className="text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 md:text-3xl">
-              {(formatValue ? formatValue(player.value) : player.value.toLocaleString("pt-BR"))}
+              {formatValue(player.value, valueFormat)}
             </div>
             <div className="text-xs uppercase tracking-wider text-zinc-500">{valueLabel}</div>
           </div>
@@ -123,4 +125,21 @@ function PlayerCard({
       </div>
     </div>
   );
+}
+
+function formatValue(value: number, fmt: ValueFormat | undefined) {
+  if (fmt === "time_ms") return formatTimeMs(value);
+  return Number(value ?? 0).toLocaleString("pt-BR");
+}
+
+function formatTimeMs(ms: number) {
+  const v = Math.max(0, Math.floor(ms));
+  const totalSeconds = Math.floor(v / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const millis = v % 1000;
+  const mm = String(minutes).padStart(2, "0");
+  const ss = String(seconds).padStart(2, "0");
+  const mmm = String(millis).padStart(3, "0");
+  return `${mm}:${ss}.${mmm}`;
 }
