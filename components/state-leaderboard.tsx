@@ -6,11 +6,14 @@ import type { UUIDMap } from "../lib/uuids";
 import type { StateLeaderboardRow, StatePlayerRow } from "../lib/repositories/states";
 import { StateMap } from "./state-map";
 
+const CATEGORIES = ["1.16", "1.16 SSG"] as const;
+
 export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[]; uuidMap: UUIDMap }) {
   const defaultSelected = useMemo(() => rows[0] ?? null, [rows]);
   const [selectedUF, setSelectedUF] = useState<string>(defaultSelected?.uf ?? "SP");
   const [selectedName, setSelectedName] = useState<string>(defaultSelected?.name ?? "São Paulo");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORIES)[number]>("1.16");
 
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState<StatePlayerRow[]>([]);
@@ -22,7 +25,13 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/states/${encodeURIComponent(selectedUF)}/players`, {
+        const url = new URL(
+          `/api/states/${encodeURIComponent(selectedUF)}/players`,
+          window.location.origin
+        );
+        url.searchParams.set("category", selectedCategory);
+
+        const res = await fetch(url.toString(), {
           cache: "no-store",
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -41,7 +50,7 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
     return () => {
       cancelled = true;
     };
-  }, [selectedUF]);
+  }, [selectedUF, selectedCategory]);
 
   return (
     <div
@@ -92,6 +101,24 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
               >
                 Fechar
               </button>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={
+                    "rounded-lg border px-3 py-2 text-xs font-black uppercase tracking-wider shadow-sm transition-all font-minecraft " +
+                    (cat === selectedCategory
+                      ? "border-emerald-500 bg-emerald-600 text-white"
+                      : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800")
+                  }
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
 
