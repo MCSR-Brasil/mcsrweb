@@ -95,6 +95,16 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
   const [svgSize, setSvgSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   const roundNames = useMemo(() => rounds.map((r) => r.name), [rounds]);
+  const maxMatches = useMemo(
+    () => Math.max(0, ...rounds.map((r) => (Array.isArray(r.matches) ? r.matches.length : 0))),
+    [rounds]
+  );
+  const desiredHeight = useMemo(() => {
+    // Dynamic height so matches have room to spread, but Finals doesn't become huge.
+    // For large brackets we cap and allow vertical scroll.
+    const base = maxMatches <= 1 ? 260 : maxMatches <= 2 ? 340 : Math.round(maxMatches * 90);
+    return Math.min(720, Math.max(260, base));
+  }, [maxMatches]);
 
   function computePaths() {
     const el = containerRef.current;
@@ -185,8 +195,8 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
       </div>
       <div
         ref={containerRef}
-        className="relative overflow-auto rounded-2xl border border-zinc-200 bg-white/50 px-3 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30"
-        style={{ height: "min(70vh, 560px)" }}
+        className="relative overflow-x-auto overflow-y-auto rounded-2xl border border-zinc-200 bg-white/50 px-3 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30"
+        style={{ height: `${desiredHeight}px` }}
       >
         <svg
           className="pointer-events-none absolute left-0 top-0"
@@ -202,7 +212,7 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
           </g>
         </svg>
 
-        <div className="relative flex h-full min-h-[360px] gap-5">
+        <div className="relative flex gap-5" style={{ minHeight: `${Math.max(260, desiredHeight)}px` }}>
           {rounds.map((r, idx) => (
             <div key={`${r.name}-${idx}`} className="w-[220px] shrink-0">
               <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -213,7 +223,7 @@ function Section({ title, rounds }: { title: string; rounds: BracketRound[] }) {
                 const topBottom = Math.max(1, Math.round(base / 2));
 
                 return (
-                  <div className="flex h-[calc(100%-22px)] flex-col">
+                  <div className="flex flex-col" style={{ minHeight: `${Math.max(200, desiredHeight - 22)}px` }}>
                     <div style={{ flexGrow: topBottom }} />
                     {r.matches.map((m, mIdx) => (
                       <div key={m.id} className="contents">
