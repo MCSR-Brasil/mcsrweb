@@ -131,7 +131,7 @@ export function PlayerLeaderboardView({
                         className="h-full w-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        referrerPolicy="no-referrer"
+                        referrerPolicy="strict-origin-when-cross-origin"
                         onLoad={() => {
                           // eslint-disable-next-line no-console
                           console.log("[RSG Modal] iframe loaded:", selectedEmbed);
