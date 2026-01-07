@@ -99,6 +99,11 @@ export default function AdminPage() {
 
   const [log, setLog] = useState<string[]>([]);
 
+  const bracketEditHref = useMemo(() => {
+    const id = tId.trim();
+    return id ? `/admin/brackets/${encodeURIComponent(id)}` : "";
+  }, [tId]);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -364,6 +369,21 @@ export default function AdminPage() {
               placeholder="ID"
               className="font-minecraft w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs font-black text-zinc-900 shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
             />
+
+            <a
+              href={bracketEditHref || "#"}
+              onClick={(e) => {
+                if (!ready || !tId.trim()) e.preventDefault();
+              }}
+              className={
+                "font-minecraft block w-full rounded-xl px-4 py-3 text-center text-xs font-black uppercase tracking-wider shadow-sm transition-all " +
+                (ready && tId.trim()
+                  ? "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                  : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500")
+              }
+            >
+              Editar Bracket (UI)
+            </a>
             <input
               value={tName}
               onChange={(e) => setTName(e.target.value)}
