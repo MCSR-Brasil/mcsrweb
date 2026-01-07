@@ -189,31 +189,11 @@ function SidebarPlayerRow({
   format: "mm_ss" | "time_ms";
 }) {
   const uuid = uuidMap[normalizeName(name)];
-  const primary = uuid ? `http://cravatar.eu/helmavatar/${uuid}/32` : null;
-  const fallback = uuid ? `https://mc-heads.net/avatar/${uuid}/32` : null;
-  const [img, setImg] = useState<string | null>(primary);
-
-  useEffect(() => {
-    setImg(primary);
-  }, [primary]);
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex min-w-0 items-center gap-3">
         <div className="w-7 text-center text-sm font-black text-zinc-500 dark:text-zinc-400">#{rank}</div>
-        {img ? (
-          <img
-            src={img}
-            alt={name}
-            className="h-8 w-8 rounded-md border border-zinc-200 dark:border-zinc-700"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={() => {
-              if (fallback && img !== fallback) setImg(fallback);
-              else setImg(null);
-            }}
-          />
-        ) : null}
         <div className="truncate text-sm font-extrabold text-zinc-900 dark:text-zinc-50">{name}</div>
       </div>
 

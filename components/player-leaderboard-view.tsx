@@ -55,6 +55,14 @@ export function PlayerLeaderboardView({
 
   const selectedEmbed = useMemo(() => getEmbedSrc(selected?.link ?? null), [selected?.link]);
 
+  useEffect(() => {
+    if (!open || !selected) return;
+    // eslint-disable-next-line no-console
+    console.log("[RSG Modal] selected.link:", selected.link);
+    // eslint-disable-next-line no-console
+    console.log("[RSG Modal] computed embed:", selectedEmbed);
+  }, [open, selected, selectedEmbed]);
+
   return (
     <div className="space-y-3">
       <h2 className="mb-6 text-center text-2xl font-bold text-zinc-900 dark:text-zinc-50">{title}</h2>
@@ -124,6 +132,14 @@ export function PlayerLeaderboardView({
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         referrerPolicy="no-referrer"
+                        onLoad={() => {
+                          // eslint-disable-next-line no-console
+                          console.log("[RSG Modal] iframe loaded:", selectedEmbed);
+                        }}
+                        onError={() => {
+                          // eslint-disable-next-line no-console
+                          console.log("[RSG Modal] iframe error:", selectedEmbed);
+                        }}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm font-semibold text-zinc-200">
