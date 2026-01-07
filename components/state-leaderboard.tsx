@@ -189,7 +189,7 @@ function SidebarPlayerRow({
   format: "mm_ss" | "time_ms";
 }) {
   const uuid = uuidMap[normalizeName(name)];
-  const primary = uuid ? `https://crafatar.com/avatars/${uuid}?size=32&overlay` : null;
+  const primary = uuid ? `http://cravatar.eu/helmavatar/${uuid}/32` : null;
   const fallback = uuid ? `https://mc-heads.net/avatar/${uuid}/32` : null;
   const [img, setImg] = useState<string | null>(primary);
 

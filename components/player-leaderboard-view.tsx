@@ -337,29 +337,15 @@ function getEmbedSrc(link: string | null): string | null {
 }
 
 function makeYouTubeEmbedUrl(idRaw: string, startRaw: string | null): string {
-  const id = idRaw.split("?")[0]?.trim() ?? "";
-  const start = parseYouTubeStart(startRaw);
-  const embed = new URL(`https://www.youtube.com/embed/${encodeURIComponent(id)}`);
-  embed.searchParams.set("rel", "0");
-  embed.searchParams.set("modestbranding", "1");
-  embed.searchParams.set("playsinline", "1");
-  if (start && start > 0) embed.searchParams.set("start", String(start));
-  return embed.toString();
+  void startRaw;
+  const id = sanitizeYouTubeId(idRaw);
+  return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
 }
 
-function parseYouTubeStart(raw: string | null): number | null {
+function sanitizeYouTubeId(raw: string): string {
   const s = String(raw ?? "").trim();
-  if (!s) return null;
-
-  if (/^\d+$/.test(s)) return Math.max(0, Number(s));
-
-  const m = s.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/i);
-  if (!m) return null;
-  const h = Number(m[1] ?? 0);
-  const min = Number(m[2] ?? 0);
-  const sec = Number(m[3] ?? 0);
-  const total = h * 3600 + min * 60 + sec;
-  return Number.isFinite(total) && total > 0 ? total : null;
+  const id = s.split("?")[0]?.split("&")[0]?.split("/")[0]?.trim() ?? "";
+  return id;
 }
 
 function formatValue(value: number, fmt: ValueFormat | undefined) {

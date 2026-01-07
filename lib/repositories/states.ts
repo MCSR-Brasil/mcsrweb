@@ -30,17 +30,9 @@ type RankedApiResponse = {
   };
 };
 
-const mock: StateLeaderboardRow[] = [
-  { uf: "SP", name: "São Paulo", value: 42, amchartsId: "BR-SP" },
-  { uf: "RJ", name: "Rio de Janeiro", value: 27, amchartsId: "BR-RJ" },
-  { uf: "MG", name: "Minas Gerais", value: 19, amchartsId: "BR-MG" },
-  { uf: "RS", name: "Rio Grande do Sul", value: 13, amchartsId: "BR-RS" },
-  { uf: "PR", name: "Paraná", value: 11, amchartsId: "BR-PR" },
-];
-
 export async function getStateLeaderboard(limit = 27): Promise<StateLeaderboardRow[]> {
   const db = getDbClient();
-  if (!db) return mock.slice(0, limit);
+  if (!db) return [];
 
   try {
     const res = await db.execute({
@@ -64,21 +56,9 @@ export async function getStateLeaderboard(limit = 27): Promise<StateLeaderboardR
 
     return rows.slice(0, limit);
   } catch {
-    return mock.slice(0, limit);
+    return [];
   }
 }
-
-const mockPlayers: StatePlayerRow[] = [
-  { name: "shy", timeMs: 512345, stateUF: "SP", category: "Any%" },
-  { name: "seedmaster", timeMs: 545120, stateUF: "SP", category: "Any%" },
-  { name: "fortress", timeMs: 579991, stateUF: "SP", category: "Any%" },
-  { name: "epnok", timeMs: 533000, stateUF: "RJ", category: "Any%" },
-  { name: "rio_rusher", timeMs: 601250, stateUF: "RJ", category: "Any%" },
-  { name: "hange", timeMs: 520420, stateUF: "MG", category: "Any%" },
-  { name: "mineiro", timeMs: 590000, stateUF: "MG", category: "Any%" },
-  { name: "gaucho", timeMs: 610100, stateUF: "RS", category: "Any%" },
-  { name: "parana_run", timeMs: 605600, stateUF: "PR", category: "Any%" },
-];
 
 async function asyncPool<T, R>(
   concurrency: number,
@@ -181,7 +161,7 @@ export async function getStatePlayers(uf: string, limit = 50, category = "Any%" 
 
   const db = getDbClient();
   if (!db) {
-    return mockPlayers.filter((p) => p.stateUF === stateUF && (p.category ?? "Any%") === cat).slice(0, limit);
+    return [];
   }
 
   try {
@@ -199,6 +179,6 @@ export async function getStatePlayers(uf: string, limit = 50, category = "Any%" 
       link: r.link ? String(r.link) : null,
     }));
   } catch {
-    return mockPlayers.filter((p) => p.stateUF === stateUF && (p.category ?? "Any%") === cat).slice(0, limit);
+    return [];
   }
 }
