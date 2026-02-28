@@ -38,3 +38,19 @@ export function getStateByUF(uf: string): BrazilState | undefined {
   const key = uf.trim().toUpperCase();
   return BRAZIL_STATES.find((s) => s.uf === key);
 }
+
+export function normalizeStateUF(raw: string | null | undefined): string | null {
+  const text = String(raw ?? "").trim().toUpperCase();
+  if (!text) return null;
+
+  if (/^BR-[A-Z]{2}$/.test(text)) {
+    const uf = text.slice(3);
+    return getStateByUF(uf) ? uf : null;
+  }
+
+  if (/^[A-Z]{2}$/.test(text)) {
+    return getStateByUF(text) ? text : null;
+  }
+
+  return null;
+}

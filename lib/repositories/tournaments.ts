@@ -1,188 +1,396 @@
-import { getDbClient } from "../db";
+import { getTournamentConfigEntries, getTournamentDefaultType, type BackendPageType } from "../backend-config";
 
-export type TournamentType = "event" | "btrl" | "bracket";
-export type BracketFormat = "single_elim" | "double_elim";
+export type TournamentCard = {
+  slug: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  url?: string;
+  prizePool?: string;
+  startsAt?: string;
+};
 
-export type Tournament = {
-  id: string;
+export type TournamentPageData = {
+  slug: string;
+  cardTitle: string;
+  cardSubtitle: string;
+  cardDescription: string;
+  prizePool?: string;
+  startsAt?: string;
+  pageType: BackendPageType;
+  rankingLabel: string;
+  url?: string;
+  content: {
+    title: string | null;
+    description: string | null;
+    links: { label: string; href: string }[];
+    results: { uuid: string | null; name: string | null; prize: string | null }[];
+    boards?: TournamentSsgBoard[];
+    ssgScoreboard?: TournamentSsgScoreRow[];
+    seeds?: string[];
+  };
+};
+
+export type TournamentSsgResult = {
+  name: string | null;
+  verified: boolean | null;
+  time: string | null;
+};
+
+export type TournamentSsgBoard = {
+  key: string;
+  label: string;
+  results: TournamentSsgResult[];
+};
+
+export type TournamentSsgScoreRow = {
   name: string;
-  startsAt: string;
-  endsAt: string | null;
-  participantsCsv: string | null;
-  type: TournamentType;
-  bracketFormat: BracketFormat | null;
-  losersBracketStartsRound: number | null;
-  prizepool: string | null;
-  winner: string | null;
-  bracketJson: string | null;
+  points: number;
 };
 
-export type TournamentSnapshot = {
-  current: Tournament | null;
-  past: Tournament[];
+type RawSsgRun = {
+  name: string | null;
+  verified: boolean | null;
+  time: string | null;
+  boardLabel: string | null;
 };
 
-function mockData(): Tournament[] {
-  const now = Date.now();
-  return [
-    {
-      id: "mcsr-br-cup-01",
-      name: "MCSR BR Cup #1",
-      startsAt: new Date(now - 1000 * 60 * 60 * 24 * 1).toISOString(),
-      endsAt: new Date(now + 1000 * 60 * 60 * 24 * 3).toISOString(),
-      participantsCsv: "",
-      type: "bracket",
-      bracketFormat: "single_elim",
-      losersBracketStartsRound: null,
-      prizepool: "R$ 3.500",
-      winner: null,
-      bracketJson: null,
-    },
-    {
-      id: "mcsr-br-open-00",
-      name: "MCSR BR Open",
-      startsAt: new Date(now - 1000 * 60 * 60 * 24 * 40).toISOString(),
-      endsAt: new Date(now - 1000 * 60 * 60 * 24 * 30).toISOString(),
-      participantsCsv: "",
-      type: "event",
-      bracketFormat: null,
-      losersBracketStartsRound: null,
-      prizepool: "R$ 2.000",
-      winner: null,
-      bracketJson: null,
-    },
-  ];
+function sanitizePageType(v: string): BackendPageType {
+  const type = String(v ?? "").trim().toLowerCase();
+  if (type === "default" || type === "event" || type === "custom" || type === "ranking" || type === "ssg") return type;
+  return "default";
 }
 
-function splitCurrentAndPast(rows: Tournament[], nowMs: number): TournamentSnapshot {
-  const current =
-    rows
-      .filter((t) => {
-        // If endsAt is NULL, treat it as "ongoing" (admin uses this to mark the active tournament).
-        if (t.endsAt == null) return true;
-
-        const start = Date.parse(t.startsAt);
-        const end = Date.parse(t.endsAt);
-        if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
-        return start <= nowMs && nowMs < end;
-      })
-      .sort((a, b) => {
-        const aStart = Date.parse(a.startsAt);
-        const bStart = Date.parse(b.startsAt);
-        // Prefer the most recently-started tournament; if parsing fails, push it lower.
-        if (!Number.isFinite(aStart) && !Number.isFinite(bStart)) return 0;
-        if (!Number.isFinite(aStart)) return 1;
-        if (!Number.isFinite(bStart)) return -1;
-        return bStart - aStart;
-      })[0] ?? null;
-  const past = rows
-    .filter((t) => (t.endsAt ? Date.parse(t.endsAt) <= nowMs : false))
-    .sort((a, b) => Date.parse(b.endsAt ?? "") - Date.parse(a.endsAt ?? ""));
-
-  return { current, past };
+function sanitizeSeeds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item ?? "").trim())
+    .filter((item) => item.length > 0)
+    .slice(0, 7);
 }
 
-function toTournament(r: Record<string, unknown>): Tournament {
-  const typeRaw = String(r.type ?? "event").toLowerCase();
-  const type: TournamentType = typeRaw === "bracket" ? "bracket" : typeRaw === "btrl" ? "btrl" : "event";
+type DefaultTournamentSheetData = {
+  title: string | null;
+  description: string | null;
+  links: { label: string; href: string }[];
+  results: { uuid: string | null; name: string | null; prize: string | null }[];
+};
 
-  const bfRaw = String(r.bracketFormat ?? "").toLowerCase();
-  const bracketFormat: BracketFormat | null =
-    bfRaw === "double_elim" ? "double_elim" : bfRaw === "single_elim" ? "single_elim" : null;
+type SsgTournamentSheetData = {
+  title: string | null;
+  description: string | null;
+  links: { label: string; href: string }[];
+  boards: TournamentSsgBoard[];
+  scoreboard: TournamentSsgScoreRow[];
+};
 
-  const losers = r.losersBracketStartsRound == null ? null : Number(r.losersBracketStartsRound);
+const SSG_POINTS_BY_PLACE = [100, 80, 60, 40, 35, 30, 25, 20, 15, 10] as const;
+
+function normalizeRunnerName(input: string | null): string {
+  return String(input ?? "").trim().toLowerCase();
+}
+
+function slugifyBoardKey(input: string, fallbackIndex: number): string {
+  const base = String(input ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return base || `board-${fallbackIndex + 1}`;
+}
+
+function parseTimeToMs(raw: string | null): number | null {
+  const text = String(raw ?? "").trim();
+  if (!text) return null;
+
+  const withMillis = text.match(/^(\d{1,2}):(\d{2})\.(\d{1,3})$/);
+  if (withMillis) {
+    const mm = Number(withMillis[1]);
+    const ss = Number(withMillis[2]);
+    const ms = Number(withMillis[3].padEnd(3, "0"));
+    if (!Number.isFinite(mm) || !Number.isFinite(ss) || !Number.isFinite(ms)) return null;
+    return mm * 60_000 + ss * 1_000 + ms;
+  }
+
+  const basic = text.match(/^(\d{1,2}):(\d{2})$/);
+  if (basic) {
+    const mm = Number(basic[1]);
+    const ss = Number(basic[2]);
+    if (!Number.isFinite(mm) || !Number.isFinite(ss)) return null;
+    return mm * 60_000 + ss * 1_000;
+  }
+
+  return null;
+}
+
+function parseMarkdownLink(raw: string): { label: string; href: string } | null {
+  const text = String(raw ?? "").trim();
+  if (!text) return null;
+
+  const md = text.match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/i);
+  if (md) return { label: md[1].trim(), href: md[2].trim() };
+
+  const looseMd = text.match(/^\[?(.+?)\]?\((https?:\/\/[^)\s]+)\)?$/i);
+  if (looseMd) return { label: looseMd[1].trim(), href: looseMd[2].trim() };
+
+  if (/^https?:\/\//i.test(text)) return { label: text, href: text };
+  return null;
+}
+
+function parseCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      out.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+function rowsFromUnknown(raw: unknown): string[][] {
+  const asRows = Array.isArray(raw) ? raw : [];
+  const rows: string[][] = [];
+  for (const row of asRows) {
+    if (!Array.isArray(row)) continue;
+    rows.push(row.map((cell) => String(cell ?? "")));
+  }
+  return rows;
+}
+
+async function fetchRowsFromUrl(sourceUrl?: string): Promise<string[][]> {
+  const url = String(sourceUrl ?? "").trim();
+  if (!url) return [];
+
+  try {
+    const res = await fetch(url, { method: "GET", cache: "no-store" });
+    if (!res.ok) return [];
+    const contentType = String(res.headers.get("content-type") ?? "").toLowerCase();
+
+    if (contentType.includes("application/json")) {
+      const json = (await res.json()) as Record<string, unknown>;
+      const candidate = json.rows ?? json.values ?? json.data ?? json.runs;
+      return rowsFromUnknown(candidate);
+    }
+
+    const text = await res.text();
+    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    return lines.map((l) => parseCsvLine(l));
+  } catch {
+    return [];
+  }
+}
+
+async function readDefaultSheetData(sourceUrl?: string): Promise<DefaultTournamentSheetData> {
+  if (!sourceUrl) return { title: null, description: null, links: [], results: [] };
+
+  const rows = await fetchRowsFromUrl(sourceUrl);
+  if (rows.length === 0) return { title: null, description: null, links: [], results: [] };
+
+  const title = String(rows[0]?.[0] ?? "").trim() || null;
+  const description = String(rows[1]?.[0] ?? "").trim() || null;
+  const links = [String(rows[2]?.[0] ?? ""), String(rows[3]?.[0] ?? "")]
+    .map((v) => parseMarkdownLink(v))
+    .filter((v): v is { label: string; href: string } => Boolean(v));
+
+  const results: { uuid: string | null; name: string | null; prize: string | null }[] = [];
+  for (const row of rows.slice(4)) {
+    const name = String(row?.[0] ?? "").trim() || null;
+    const uuid = String(row?.[1] ?? "").trim() || null;
+    const prize = String(row?.[2] ?? "").trim() || null;
+    if (!uuid && !name && !prize) continue;
+    results.push({ uuid, name, prize });
+  }
 
   return {
-    id: String(r.id ?? ""),
-    name: String(r.name ?? ""),
-    startsAt: String(r.startsAt ?? ""),
-    endsAt: r.endsAt ? String(r.endsAt) : null,
-    participantsCsv: r.participantsCsv ? String(r.participantsCsv) : null,
-    type,
-    bracketFormat,
-    losersBracketStartsRound: Number.isFinite(losers as number) ? Math.floor(losers as number) : null,
-    prizepool: r.prizepool ? String(r.prizepool) : null,
-    winner: r.winner ? String(r.winner) : null,
-    bracketJson: r.bracketJson ? String(r.bracketJson) : null,
+    title,
+    description,
+    links,
+    results,
   };
 }
 
-export async function getTournaments(limit = 50): Promise<Tournament[]> {
-  const db = getDbClient();
-  const nowMs = Date.now();
-
-  if (!db) {
-    return splitCurrentAndPast(mockData(), nowMs).past.slice(0, limit);
-  }
-
-  try {
-    const res = await db.execute({
-      sql: "select id, name, starts_at as startsAt, ends_at as endsAt, participants_csv as participantsCsv, type as type, bracket_format as bracketFormat, losers_bracket_starts_round as losersBracketStartsRound, prizepool as prizepool, winner as winner, bracket_json as bracketJson from tournaments order by starts_at desc limit ?",
-      args: [limit],
-    });
-    return res.rows.map((row: Record<string, unknown>) => toTournament(row));
-  } catch {
-    return splitCurrentAndPast(mockData(), nowMs).past.slice(0, limit);
-  }
+function parseVerified(raw: string): boolean | null {
+  const value = String(raw ?? "").trim().toLowerCase();
+  if (!value) return null;
+  if (["sim", "yes", "true", "1", "verified", "verificado"].includes(value)) return true;
+  if (["nao", "não", "no", "false", "0", "unverified", "nao verificado", "não verificado"].includes(value)) return false;
+  return null;
 }
 
-export async function getTournamentById(id: string): Promise<Tournament | null> {
-  const db = getDbClient();
-  if (!db) {
-    const key = String(id ?? "").trim();
-    if (!key) return null;
-    return mockData().find((t) => t.id === key) ?? null;
+async function readSsgSheetData(sourceUrl?: string): Promise<SsgTournamentSheetData> {
+  if (!sourceUrl) return { title: null, description: null, links: [], boards: [], scoreboard: [] };
+
+  const rows = await fetchRowsFromUrl(sourceUrl);
+  if (rows.length === 0) return { title: null, description: null, links: [], boards: [], scoreboard: [] };
+
+  const title = String(rows[0]?.[0] ?? "").trim() || null;
+  const description = String(rows[1]?.[0] ?? "").trim() || null;
+  const links = [String(rows[2]?.[0] ?? ""), String(rows[3]?.[0] ?? "")]
+    .map((v) => parseMarkdownLink(v))
+    .filter((v): v is { label: string; href: string } => Boolean(v));
+
+  const runs: RawSsgRun[] = [];
+  for (const row of rows.slice(5)) {
+    const name = String(row?.[0] ?? "").trim() || null;
+    const verified = parseVerified(String(row?.[1] ?? ""));
+    const time = String(row?.[2] ?? "").trim() || null;
+    const boardLabel = String(row?.[3] ?? "").trim() || null;
+    if (!name && verified === null && !time && !boardLabel) continue;
+    if (!boardLabel || !name || !time) continue;
+    runs.push({ name, verified, time, boardLabel });
   }
 
-  try {
-    const res = await db.execute({
-      sql: "select id, name, starts_at as startsAt, ends_at as endsAt, participants_csv as participantsCsv, type as type, bracket_format as bracketFormat, losers_bracket_starts_round as losersBracketStartsRound, prizepool as prizepool, winner as winner, bracket_json as bracketJson from tournaments where id = ?",
-      args: [id],
-    });
-    const row = res.rows[0] as Record<string, unknown> | undefined;
-    return row ? toTournament(row) : null;
-  } catch {
-    return null;
+  const grouped = new Map<string, RawSsgRun[]>();
+  for (const run of runs) {
+    const label = String(run.boardLabel ?? "").trim();
+    if (!label) continue;
+    if (!grouped.has(label)) grouped.set(label, []);
+    grouped.get(label)?.push(run);
   }
+
+  const boards: TournamentSsgBoard[] = Array.from(grouped.entries()).map(([label, boardRuns], idx) => {
+    const fastestByRunner = new Map<string, RawSsgRun>();
+    for (const run of boardRuns) {
+      const key = normalizeRunnerName(run.name);
+      if (!key) continue;
+
+      const current = fastestByRunner.get(key);
+      if (!current) {
+        fastestByRunner.set(key, run);
+        continue;
+      }
+
+      const currentMs = parseTimeToMs(current.time);
+      const nextMs = parseTimeToMs(run.time);
+      if (currentMs === null && nextMs !== null) {
+        fastestByRunner.set(key, run);
+        continue;
+      }
+      if (currentMs !== null && nextMs !== null && nextMs < currentMs) {
+        fastestByRunner.set(key, run);
+      }
+    }
+
+    const results = Array.from(fastestByRunner.values())
+      .map((item): TournamentSsgResult => ({
+        name: item.name,
+        verified: item.verified,
+        time: item.time,
+      }))
+      .sort((a, b) => {
+        const av = parseTimeToMs(a.time);
+        const bv = parseTimeToMs(b.time);
+        if (av === null && bv === null) return String(a.name ?? "").localeCompare(String(b.name ?? ""), "pt-BR");
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return av - bv;
+      });
+
+    return {
+      key: slugifyBoardKey(label, idx),
+      label,
+      results,
+    };
+  });
+
+  const scoreboardMap = new Map<string, TournamentSsgScoreRow>();
+  for (const board of boards) {
+    board.results.slice(0, SSG_POINTS_BY_PLACE.length).forEach((row, index) => {
+      const key = normalizeRunnerName(row.name);
+      if (!key) return;
+      const points = SSG_POINTS_BY_PLACE[index] ?? 0;
+      const current = scoreboardMap.get(key);
+      if (!current) {
+        scoreboardMap.set(key, {
+          name: String(row.name ?? "").trim(),
+          points,
+        });
+        return;
+      }
+
+      current.points += points;
+      if (!current.name) current.name = String(row.name ?? "").trim();
+    });
+  }
+
+  const scoreboard = Array.from(scoreboardMap.values()).sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    return a.name.localeCompare(b.name, "pt-BR");
+  });
+
+  return {
+    title,
+    description,
+    links,
+    boards,
+    scoreboard,
+  };
 }
 
-export async function getTournamentSnapshot(): Promise<TournamentSnapshot> {
-  const db = getDbClient();
-  const nowMs = Date.now();
-
-  if (!db) {
-    return splitCurrentAndPast(mockData(), nowMs);
-  }
-
-  try {
-    const res = await db.execute({
-      sql: "select id, name, starts_at as startsAt, ends_at as endsAt, participants_csv as participantsCsv, type as type, bracket_format as bracketFormat, losers_bracket_starts_round as losersBracketStartsRound, prizepool as prizepool, winner as winner, bracket_json as bracketJson from tournaments order by starts_at desc",
-    });
-
-    const rows = res.rows.map((r: Record<string, unknown>) => toTournament(r));
-
-    return splitCurrentAndPast(rows, nowMs);
-  } catch {
-    return splitCurrentAndPast(mockData(), nowMs);
-  }
+export async function getTournamentCards(): Promise<TournamentCard[]> {
+  const entries = getTournamentConfigEntries();
+  return entries.map((entry) => ({
+    slug: entry.slug,
+    title: entry.title,
+    subtitle: entry.subtitle,
+    description: entry.description,
+    url: entry.url,
+    prizePool: entry.prizePool,
+    startsAt: entry.startsAt,
+  }));
 }
 
-export async function getPastTournaments(limit = 50): Promise<Tournament[]> {
-  const db = getDbClient();
-  const nowMs = Date.now();
+export async function getTournamentPageData(slug: string): Promise<TournamentPageData | null> {
+  const key = String(slug ?? "").trim().toLowerCase();
+  if (!key) return null;
 
-  if (!db) {
-    return splitCurrentAndPast(mockData(), nowMs).past.slice(0, limit);
-  }
+  const entries = getTournamentConfigEntries();
+  const entry = entries.find((e) => String(e.slug).trim().toLowerCase() === key);
+  if (!entry) return null;
 
-  try {
-    const res = await db.execute({
-      sql: "select id, name, starts_at as startsAt, ends_at as endsAt, participants_csv as participantsCsv, type as type, bracket_format as bracketFormat, losers_bracket_starts_round as losersBracketStartsRound, prizepool as prizepool, winner as winner, bracket_json as bracketJson from tournaments where ends_at is not null and ends_at <= datetime('now') order by ends_at desc limit ?",
-      args: [limit],
-    });
+  const pageType = sanitizePageType(entry.pageType ?? getTournamentDefaultType());
+  const defaultHdr = pageType === "ssg" ? null : await readDefaultSheetData(entry.url);
+  const ssgHdr = pageType === "ssg" ? await readSsgSheetData(entry.url) : null;
+  const firstBoardResults = (ssgHdr?.boards[0]?.results ?? []).map((item: TournamentSsgResult) => ({
+    uuid: null,
+    name: item.name,
+    prize: item.time,
+  }));
+  const seeds = sanitizeSeeds(entry.seeds);
 
-    return res.rows.map((r: Record<string, unknown>) => toTournament(r));
-  } catch {
-    return splitCurrentAndPast(mockData(), nowMs).past.slice(0, limit);
-  }
+  return {
+    slug: entry.slug,
+    cardTitle: entry.title,
+    cardSubtitle: entry.subtitle,
+    cardDescription: entry.description,
+    prizePool: entry.prizePool,
+    startsAt: entry.startsAt,
+    pageType,
+    rankingLabel: pageType === "event" ? "Evento" : pageType === "custom" ? "Custom" : pageType === "ssg" ? "SSG" : "Ranking",
+    url: entry.url,
+    content: {
+      title: ssgHdr?.title ?? defaultHdr?.title ?? null,
+      description: ssgHdr?.description ?? defaultHdr?.description ?? null,
+      links: ssgHdr?.links ?? defaultHdr?.links ?? [],
+      results: ssgHdr ? firstBoardResults : (defaultHdr?.results ?? []),
+      boards: ssgHdr?.boards,
+      ssgScoreboard: ssgHdr?.scoreboard,
+      seeds,
+    },
+  };
 }

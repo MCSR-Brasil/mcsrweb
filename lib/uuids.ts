@@ -1,10 +1,28 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { normalizeName } from "./normalize";
+import { fetchAppsScriptAction } from "./sheets-backend";
 
 export type UUIDMap = Record<string, string>; // key: normalized name, value: uuid
 
+async function readUUIDMapFromAppsScript(): Promise<UUIDMap> {
+  const map: UUIDMap = {};
+  const json = await fetchAppsScriptAction("runners");
+  const runners = Array.isArray(json?.runners) ? json.runners : [];
+  for (const item of runners) {
+    if (!Array.isArray(item)) continue;
+    const name = normalizeName(String(item[0] ?? ""));
+    const uuid = String(item[3] ?? "").trim();
+    if (!name || !uuid) continue;
+    map[name] = uuid;
+  }
+  return map;
+}
+
 export async function readUUIDMap(csvPath?: string): Promise<UUIDMap> {
+  const backendMap = await readUUIDMapFromAppsScript();
+  if (Object.keys(backendMap).length > 0) return backendMap;
+
   const filePath = csvPath ?? path.resolve(process.cwd(), "data", "uuid.csv");
   const map: UUIDMap = {};
   let raw: string;

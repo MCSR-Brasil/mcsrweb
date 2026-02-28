@@ -1,15 +1,21 @@
-import { getDbClient } from "../db";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { normalizeName } from "../normalize";
+import { fetchAppsScriptAction, parseTimeToMs } from "../sheets-backend";
+import { normalizeStateUF } from "../states";
 
 export type PlayerLeaderboardRow = {
   name: string;
   value: number;
   stateUF?: string | null;
+  uuid?: string | null;
 };
 
 export type RunLeaderboardRow = {
   name: string;
   timeMs: number;
   stateUF?: string | null;
+  category?: string;
   achievedAt?: string | null;
   link?: string | null;
   description?: string | null;
@@ -33,37 +39,265 @@ const mockRanked: PlayerLeaderboardRow[] = [
   { name: "fortress", value: 1501, stateUF: "BA" },
 ];
 
-export async function getRsgLeaderboard(limit = 100): Promise<PlayerLeaderboardRow[]> {
-  void limit;
-  return [];
+type RunnerSourceRow = {
+  name: string;
+  stateUF: string | null;
+  uuid: string | null;
+};
+
+const MCSR_RANKED_BR_API = "https://mcsrranked.com/api/leaderboard?country=BR";
+
+function normalizeUuid(raw: string | null | undefined): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-f0-9]/g, "");
 }
 
-export async function getRunsLeaderboard(category: string, limit = 100): Promise<RunLeaderboardRow[]> {
-  const cat = category.trim();
-  const db = getDbClient();
-  if (!db) return mockRuns.slice(0, limit);
+function parseCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      out.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
 
+async function readRunsCsv(): Promise<RunLeaderboardRow[]> {
+  const filePath = path.resolve(process.cwd(), "data", "runs.csv");
   try {
-    const res = await db.execute({
-      sql: "select p.name as name, p.state_uf as stateUF, b.time_ms as timeMs, b.achieved_at as achievedAt, b.link as link, b.description as description, b.seed as seed, b.bastion as bastion from v_player_best_runs b join players p on p.uuid = b.player_uuid where b.category = ? order by b.time_ms asc limit ?",
-      args: [cat, limit],
-    });
+    const raw = await fs.readFile(filePath, "utf8");
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length <= 1) return [];
 
-    return res.rows.map((r: Record<string, unknown>) => ({
-      name: String(r.name ?? ""),
-      timeMs: Number(r.timeMs ?? 0),
-      stateUF: r.stateUF ? String(r.stateUF) : null,
-      achievedAt: r.achievedAt ? String(r.achievedAt) : null,
-      link: r.link ? String(r.link) : null,
-      description: r.description ? String(r.description) : null,
-      seed: r.seed ? String(r.seed) : null,
-      bastion: r.bastion ? String(r.bastion) : null,
-    }));
+    const rows: RunLeaderboardRow[] = [];
+    for (const line of lines.slice(1)) {
+      const [name, timeMsRaw, stateUF, category, achievedAt, link, description, seed, bastion] = parseCsvLine(line);
+      const timeMs = Number(timeMsRaw);
+      if (!name || !Number.isFinite(timeMs) || timeMs <= 0) continue;
+      rows.push({
+        name,
+        timeMs: Math.floor(timeMs),
+        stateUF: stateUF || null,
+        category: category || undefined,
+        achievedAt: achievedAt || null,
+        link: link || null,
+        description: description || null,
+        seed: seed || null,
+        bastion: bastion || null,
+      });
+    }
+    return rows;
   } catch {
-    return mockRuns.slice(0, limit);
+    return [];
   }
 }
 
+async function readRunnersAppsScript(): Promise<RunnerSourceRow[]> {
+  const json = await fetchAppsScriptAction("runners");
+  const runners = Array.isArray(json?.runners) ? json.runners : [];
+  const rows: RunnerSourceRow[] = [];
+  for (const item of runners) {
+    if (!Array.isArray(item)) continue;
+    const c0 = String(item[0] ?? "").trim();
+    const c1 = String(item[1] ?? "").trim();
+    const c2 = String(item[2] ?? "").trim();
+    const c3 = String(item[3] ?? "").trim();
+    const c4 = String(item[4] ?? "").trim();
+
+    const isTimestampFirst = /^\d{10,}$/.test(c0);
+    const name = isTimestampFirst ? c1 : c0;
+    const stateUF = normalizeStateUF(isTimestampFirst ? c2 : c1);
+    const uuid = (isTimestampFirst ? c4 : c3) || null;
+    if (!name) continue;
+    rows.push({ name, stateUF, uuid });
+  }
+  return rows;
+}
+
+async function readRunsAppsScript(category: string): Promise<RunLeaderboardRow[]> {
+  const cat = category.trim().toLowerCase();
+  const action = cat === "1.16 ssg" ? "ssg116" : cat === "1.16" ? "rsg116" : "";
+  if (!action) return [];
+
+  const [json, runners] = await Promise.all([fetchAppsScriptAction(action), readRunnersAppsScript()]);
+  const runs = Array.isArray(json?.runs) ? json.runs : [];
+  const byName = new Map<string, RunnerSourceRow>();
+  for (const r of runners) byName.set(normalizeName(r.name), r);
+
+  const rows: RunLeaderboardRow[] = [];
+  for (const item of runs) {
+    if (!Array.isArray(item)) continue;
+    const name = String(item[0] ?? "").trim();
+    if (!name) continue;
+
+    const timeMs = parseTimeToMs(item[1]);
+    if (!Number.isFinite(timeMs) || (timeMs as number) <= 0) continue;
+
+    const profile = byName.get(normalizeName(name));
+    if (action === "rsg116") {
+      rows.push({
+        name,
+        timeMs: Math.floor(timeMs as number),
+        stateUF: profile?.stateUF ?? null,
+        category: "1.16",
+        achievedAt: String(item[3] ?? "").trim() || null,
+        link: String(item[6] ?? "").trim() || null,
+        description: String(item[7] ?? "").trim() || null,
+        seed: String(item[5] ?? "").trim() || null,
+        bastion: String(item[2] ?? "").trim() || null,
+      });
+      continue;
+    }
+
+    rows.push({
+      name,
+      timeMs: Math.floor(timeMs as number),
+      stateUF: profile?.stateUF ?? null,
+      category: "1.16 SSG",
+      achievedAt: String(item[3] ?? "").trim() || null,
+      link: String(item[5] ?? "").trim() || null,
+      description: String(item[6] ?? "").trim() || null,
+      seed: String(item[2] ?? "").trim() || null,
+      bastion: null,
+    });
+  }
+  return rows;
+}
+
+async function readRankedAppsScript(): Promise<PlayerLeaderboardRow[]> {
+  const runners = await readRunnersAppsScript();
+  const byName = new Map<string, RunnerSourceRow>();
+  const byUuid = new Map<string, RunnerSourceRow>();
+  for (const r of runners) {
+    byName.set(normalizeName(r.name), r);
+    const id = normalizeUuid(r.uuid);
+    if (id) byUuid.set(id, r);
+  }
+
+  try {
+    const res = await fetch(MCSR_RANKED_BR_API, { method: "GET", cache: "no-store" });
+    if (res.ok) {
+      const json = (await res.json()) as {
+        status?: string;
+        data?: { users?: Array<{ uuid?: string; nickname?: string; eloRate?: number }> };
+      };
+      const users = Array.isArray(json?.data?.users) ? json.data.users : [];
+      if (users.length > 0) {
+        const rows: PlayerLeaderboardRow[] = [];
+        for (const user of users) {
+          const nickname = String(user?.nickname ?? "").trim();
+          const elo = Number(user?.eloRate ?? NaN);
+          if (!nickname || !Number.isFinite(elo)) continue;
+
+          const profileByUuid = byUuid.get(normalizeUuid(String(user?.uuid ?? "")));
+          const profileByName = byName.get(normalizeName(nickname));
+          const profile = profileByUuid ?? profileByName;
+
+          rows.push({
+            name: nickname,
+            value: Math.floor(elo),
+            stateUF: profile?.stateUF ?? null,
+            uuid: normalizeUuid(String(user?.uuid ?? "")) || null,
+          });
+        }
+        if (rows.length > 0) return rows;
+      }
+    }
+  } catch {
+    // fallback below
+  }
+
+  const json = await fetchAppsScriptAction("ranked");
+  const rankedRaw = Array.isArray(json?.ranked) ? json.ranked : Array.isArray(json?.runs) ? json.runs : [];
+  if (!Array.isArray(rankedRaw) || rankedRaw.length === 0) return [];
+
+  const rows: PlayerLeaderboardRow[] = [];
+  for (const item of rankedRaw) {
+    if (!Array.isArray(item)) continue;
+    const name = String(item[0] ?? "").trim();
+    const value = Number(item[1] ?? NaN);
+    if (!name || !Number.isFinite(value)) continue;
+    const stateFromRow = normalizeStateUF(String(item[2] ?? ""));
+    const stateFromRunner = byName.get(normalizeName(name))?.stateUF ?? null;
+    rows.push({
+      name,
+      value: Math.floor(value),
+      stateUF: stateFromRow || stateFromRunner,
+      uuid: byName.get(normalizeName(name))?.uuid ?? null,
+    });
+  }
+  return rows;
+}
+
+async function readRankedCsv(): Promise<PlayerLeaderboardRow[]> {
+  const filePath = path.resolve(process.cwd(), "data", "ranked.csv");
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length <= 1) return [];
+
+    const rows: PlayerLeaderboardRow[] = [];
+    for (const line of lines.slice(1)) {
+      const [name, valueRaw, stateUF, uuid] = parseCsvLine(line);
+      const value = Number(valueRaw);
+      if (!name || !Number.isFinite(value)) continue;
+      rows.push({
+        name,
+        value: Math.floor(value),
+        stateUF: normalizeStateUF(stateUF),
+        uuid: normalizeUuid(uuid) || null,
+      });
+    }
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
+export async function getRsgLeaderboard(limit = 100): Promise<PlayerLeaderboardRow[]> {
+  const rows = await getRunsLeaderboard("1.16", 1000);
+  const bestByName = new Map<string, RunLeaderboardRow>();
+  for (const row of rows) {
+    const key = row.name.trim().toLowerCase();
+    const prev = bestByName.get(key);
+    if (!prev || row.timeMs < prev.timeMs) bestByName.set(key, row);
+  }
+  return Array.from(bestByName.values())
+    .sort((a, b) => a.timeMs - b.timeMs)
+    .slice(0, limit)
+    .map((r) => ({ name: r.name, value: r.timeMs, stateUF: r.stateUF ?? null }));
+}
+
+export async function getRunsLeaderboard(category: string, limit = 100): Promise<RunLeaderboardRow[]> {
+  const cat = category.trim().toLowerCase();
+  const backendRows = await readRunsAppsScript(category);
+  const rows = backendRows.length > 0 ? backendRows : await readRunsCsv();
+  const source = rows.length > 0 ? rows : mockRuns;
+  const filtered = source.filter((r) => String(r.category ?? "1.16").trim().toLowerCase() === cat);
+  return filtered.sort((a, b) => a.timeMs - b.timeMs).slice(0, limit);
+}
+
 export async function getRankedLeaderboard(limit = 100): Promise<PlayerLeaderboardRow[]> {
-  return mockRanked.slice(0, limit);
+  const backendRows = await readRankedAppsScript();
+  const rows = backendRows.length > 0 ? backendRows : await readRankedCsv();
+  const source = rows.length > 0 ? rows : mockRanked;
+  return source.slice().sort((a, b) => b.value - a.value).slice(0, limit);
 }

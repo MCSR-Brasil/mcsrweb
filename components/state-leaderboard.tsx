@@ -1,76 +1,50 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { normalizeName } from "../lib/normalize";
-import type { UUIDMap } from "../lib/uuids";
-import type { StateLeaderboardRow, StatePlayerRow } from "../lib/repositories/states";
+import { useEffect, useMemo, useState } from "react";
+import type { StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
 import { StateMap } from "./state-map";
 
-const CATEGORIES = ["Ranked", "1.16", "1.16 SSG"] as const;
-
-export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[]; uuidMap: UUIDMap }) {
-  const defaultSelected = useMemo(() => rows[0] ?? null, [rows]);
+export function StateLeaderboard({
+  rows,
+  playersByUF,
+  embedded = false,
+  withTopOverlay = false,
+}: {
+  rows: StateLeaderboardRow[];
+  playersByUF: StatePlayersByUF;
+  embedded?: boolean;
+  withTopOverlay?: boolean;
+}) {
+  const defaultSelected = useMemo(() => rows.find((r) => r.value > 0) ?? rows[0] ?? null, [rows]);
   const [selectedUF, setSelectedUF] = useState<string>(defaultSelected?.uf ?? "SP");
   const [selectedName, setSelectedName] = useState<string>(defaultSelected?.name ?? "São Paulo");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORIES)[number]>("1.16");
 
-  const cacheRef = useRef(new Map<string, StatePlayerRow[]>());
-
-  const [loading, setLoading] = useState(false);
-  const [players, setPlayers] = useState<StatePlayerRow[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const players = useMemo(() => playersByUF[selectedUF] ?? [], [playersByUF, selectedUF]);
 
   useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      const key = `${selectedUF}::${selectedCategory}`;
-      const cached = cacheRef.current.get(key);
-      if (cached) {
-        setPlayers(cached);
-        setError(null);
-        setLoading(false);
-        return;
-      }
+    if (!embedded) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
 
-      setLoading(true);
-      setError(null);
-      try {
-        const url = new URL(
-          `/api/states/${encodeURIComponent(selectedUF)}/players`,
-          window.location.origin
-        );
-        url.searchParams.set("category", selectedCategory);
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
-        const res = await fetch(url.toString(), {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as { rows: StatePlayerRow[] };
-        const next = Array.isArray(json.rows) ? json.rows : [];
-        if (!cancelled) {
-          setPlayers(next);
-          cacheRef.current.set(key, next);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to load");
-          setPlayers([]);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    run();
     return () => {
-      cancelled = true;
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
     };
-  }, [selectedUF, selectedCategory]);
+  }, [embedded]);
 
   return (
     <div
-      className="relative left-1/2 right-1/2 w-screen -mx-[50vw] overflow-hidden rounded-2xl border border-zinc-200 bg-white/50 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30"
-      style={{ height: "calc(100dvh - 160px)" }}
+      className={
+        "relative overflow-hidden border border-zinc-200 bg-white/50 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30 " +
+        (embedded
+          ? "left-1/2 right-1/2 w-screen -mx-[50vw] rounded-none border-x-0"
+          : "left-1/2 right-1/2 w-screen -mx-[50vw] rounded-2xl")
+      }
+      style={{ height: embedded ? "calc(100dvh - 76px)" : "calc(100dvh - 160px)" }}
     >
       <StateMap
         rows={rows}
@@ -83,17 +57,11 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
         className="h-full w-full rounded-none border-0 bg-transparent shadow-none backdrop-blur-0 dark:bg-transparent"
       />
 
-      <button
-        type="button"
-        onClick={() => setSidebarOpen((s) => !s)}
-        className="absolute left-4 top-4 rounded-lg border border-zinc-200 bg-white/80 px-3 py-2 text-xs font-black text-zinc-800 shadow-sm backdrop-blur-sm transition-all hover:bg-white dark:border-zinc-800 dark:bg-zinc-950/70 dark:text-zinc-100 dark:hover:bg-zinc-950 font-minecraft"
-      >
-        {sidebarOpen ? "Ocultar" : "Ranking"}
-      </button>
 
       <aside
         className={
-          "absolute right-0 top-0 h-full w-[min(92vw,520px)] border-l border-zinc-200 bg-white/85 shadow-xl backdrop-blur-sm transition-transform dark:border-zinc-800 dark:bg-zinc-950/80 " +
+          "absolute right-0 z-20 w-[min(92vw,520px)] border-l border-zinc-200 bg-white/88 shadow-xl backdrop-blur-sm transition-transform dark:border-zinc-800 dark:bg-zinc-950/85 " +
+          (withTopOverlay ? "top-24 h-[calc(100%-6rem)] rounded-tl-2xl" : "top-0 h-full ") +
           (sidebarOpen ? "translate-x-0" : "translate-x-full")
         }
       >
@@ -118,38 +86,13 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
               </button>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={
-                    "rounded-lg border px-3 py-2 text-xs font-black uppercase tracking-wider shadow-sm transition-all font-minecraft " +
-                    (cat === selectedCategory
-                      ? "border-emerald-500 bg-emerald-600 text-white"
-                      : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800")
-                  }
-                >
-                  {cat}
-                </button>
-              ))}
+            <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+              Categoria: RSG 1.16
             </div>
           </div>
 
           <div className="flex-1 overflow-auto p-4">
-            {loading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-[52px] w-full animate-pulse rounded-lg border border-zinc-200 bg-white/70 dark:border-zinc-800 dark:bg-zinc-900/70"
-                  />
-                ))}
-              </div>
-            ) : error ? (
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">Erro: {error}</div>
-            ) : players.length === 0 ? (
+            {players.length === 0 ? (
               <div className="text-sm text-zinc-600 dark:text-zinc-400">Sem dados para este estado.</div>
             ) : (
               <div className="space-y-2">
@@ -160,8 +103,7 @@ export function StateLeaderboard({ rows, uuidMap }: { rows: StateLeaderboardRow[
                     name={p.name}
                     timeMs={p.timeMs}
                     link={p.link ?? null}
-                    uuidMap={uuidMap}
-                    format={selectedCategory === "Ranked" ? "mm_ss" : "time_ms"}
+                    format="time_ms"
                   />
                 ))}
               </div>
@@ -178,28 +120,26 @@ function SidebarPlayerRow({
   name,
   timeMs,
   link,
-  uuidMap,
   format,
 }: {
   rank: number;
   name: string;
   timeMs: number;
   link: string | null;
-  uuidMap: UUIDMap;
-  format: "mm_ss" | "time_ms";
+  format: "number" | "time_ms";
 }) {
-  const uuid = uuidMap[normalizeName(name)];
-
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm transition-colors hover:border-emerald-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600/50">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="w-7 text-center text-sm font-black text-zinc-500 dark:text-zinc-400">#{rank}</div>
+        <div className="w-9 rounded-md bg-zinc-100 py-1 text-center text-sm font-black tabular-nums text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+          #{rank}
+        </div>
         <div className="truncate text-sm font-extrabold text-zinc-900 dark:text-zinc-50">{name}</div>
       </div>
 
       <div className="text-right">
         <div className="text-sm font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
-          {format === "mm_ss" ? formatMmSs(timeMs) : formatTimeMs(timeMs)}
+          {format === "number" ? Number(timeMs ?? 0).toLocaleString("pt-BR") : formatTimeMs(timeMs)}
         </div>
         {link ? (
           <a
@@ -222,13 +162,6 @@ function formatTimeMs(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  const millis = Math.max(0, ms % 1000);
-  return `${minutes}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
-}
-
-function formatMmSs(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
+

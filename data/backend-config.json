@@ -1,0 +1,34 @@
+{
+  "appsScript": {
+    "baseUrl": "https://script.google.com/macros/s/AKfycbztdxz4Cm5x03Xs_1mdX9Uxkf4g51FqohS-SqoAn28CPuvMAAJgdJsYhstp57PogdY4/exec?action=",
+    "actions": {
+      "runners": "getrunners",
+      "rsg116": "getrsg116",
+      "ssg116": "getssg116",
+      "ranked": "getranked",
+      "earnings": "getearnings"
+    }
+  },
+  "pages": {
+    "mc": {
+      "defaultMode": "rsg",
+      "rsgDefaultCategory": "1.16"
+    },
+    "tournaments": {
+      "defaultType": "default",
+      "entries": [
+        {
+          "slug": "bepe-zeeds",
+          "title": "Evento Bepe Zeeds",
+          "subtitle": "Scout And Route",
+          "description": "Evento de SSG com seeds diferenciadas, melhores tempos ganham.",
+          "prizePool": "R$ 1000",
+          "startsAt": "2026-03-02",
+          "seeds": ["123456789", "-987654321", "4455667788", "4455667788", "4455667788"],
+          "url": "https://script.google.com/macros/s/AKfycbxARXFN0yZfORTIpIEVu7u1SgpfdZApAjm3KcBv6rON7KIekXwMOPhLJ_iFyheUYd9oIA/exec?action=gettournamentdefault",
+          "pageType": "ssg"
+        }
+      ]
+    }
+  }
+}

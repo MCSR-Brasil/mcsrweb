@@ -10,14 +10,20 @@ export function PageHeader({
   right?: ReactNode;
 }) {
   return (
-    <header className="mb-10">
+    <header className="mb-8 overflow-hidden rounded-3xl border border-zinc-200 bg-white/85 p-6 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/70 sm:p-8">
+      <div className="pointer-events-none absolute" />
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
-          <h1 className="font-minecraft mb-2 bg-gradient-to-br from-zinc-900 via-zinc-700 to-zinc-900 bg-clip-text text-3xl font-black tracking-tight text-transparent dark:from-zinc-50 dark:via-zinc-300 dark:to-zinc-50 sm:text-4xl">
+          <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+            Leaderboard
+          </div>
+          <h1 className="font-minecraft mb-2 text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
             {title}
           </h1>
           {subtitle ? (
-            <p className="max-w-3xl text-sm text-zinc-600 dark:text-zinc-400 sm:text-base">{subtitle}</p>
+            <p className="max-w-3xl text-sm font-semibold leading-relaxed text-zinc-700 dark:text-zinc-300 sm:text-base">
+              {subtitle}
+            </p>
           ) : null}
         </div>
         {right ? <div className="shrink-0">{right}</div> : null}

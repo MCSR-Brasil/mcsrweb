@@ -26,8 +26,8 @@ const minecraftFont = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "Torneios & Rankings - Minecraft Speedrunning BR",
-  description: "Acompanhe os maiores vencedores e eventos da comunidade brasileira de Minecraft Speedrunning. Rankings, prizepools e histórico completo de torneios.",
+  title: "Rankings Hub - Minecraft Speedrunning BR",
+  description: "Hub oficial de rankings da comunidade brasileira de Minecraft Speedrunning. Veja leaderboards de estados, earnings, RSG e ranked.",
 };
 
 export default function RootLayout({

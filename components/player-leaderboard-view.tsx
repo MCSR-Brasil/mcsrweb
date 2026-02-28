@@ -10,6 +10,7 @@ export type PlayerRow = {
   name: string;
   value: number;
   stateUF?: string | null;
+  uuid?: string | null;
   achievedAt?: string | null;
   link?: string | null;
   description?: string | null;
@@ -55,14 +56,6 @@ export function PlayerLeaderboardView({
 
   const selectedEmbed = useMemo(() => getEmbedSrc(selected?.link ?? null), [selected?.link]);
 
-  useEffect(() => {
-    if (!open || !selected) return;
-    // eslint-disable-next-line no-console
-    console.log("[RSG Modal] selected.link:", selected.link);
-    // eslint-disable-next-line no-console
-    console.log("[RSG Modal] computed embed:", selectedEmbed);
-  }, [open, selected, selectedEmbed]);
-
   return (
     <div className="space-y-3">
       <h2 className="mb-6 text-center text-2xl font-bold text-zinc-900 dark:text-zinc-50">{title}</h2>
@@ -100,8 +93,8 @@ export function PlayerLeaderboardView({
           />
 
           <div className="absolute left-1/2 top-1/2 w-[min(1100px,94vw)] -translate-x-1/2 -translate-y-1/2">
-            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+            <div className="overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-950">
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-300 px-4 py-3 dark:border-zinc-700">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-black text-zinc-900 dark:text-zinc-50">{selected.name}</div>
                   <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
@@ -116,7 +109,7 @@ export function PlayerLeaderboardView({
                     setOpen(false);
                     setSelected(null);
                   }}
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-black text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-black text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
                 >
                   Fechar
                 </button>
@@ -132,14 +125,6 @@ export function PlayerLeaderboardView({
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         referrerPolicy="strict-origin-when-cross-origin"
-                        onLoad={() => {
-                          // eslint-disable-next-line no-console
-                          console.log("[RSG Modal] iframe loaded:", selectedEmbed);
-                        }}
-                        onError={() => {
-                          // eslint-disable-next-line no-console
-                          console.log("[RSG Modal] iframe error:", selectedEmbed);
-                        }}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm font-semibold text-zinc-200">
@@ -167,7 +152,7 @@ export function PlayerLeaderboardView({
                       <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
                         <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Data</div>
                         <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">
-                          {selected.achievedAt ? new Date(selected.achievedAt).toLocaleDateString("pt-BR") : "—"}
+                          {formatDisplayDate(selected.achievedAt)}
                         </div>
                       </div>
                     </div>
@@ -251,7 +236,8 @@ function PlayerCard({
   const idx = hash % placeholderUUIDs.length;
   const key = normalizeName(player.name);
   const mapped = uuidMap[key];
-  const finalUUID = mapped ?? placeholderUUIDs[idx];
+  const direct = String(player.uuid ?? "").trim().toLowerCase().replace(/[^a-f0-9]/g, "");
+  const finalUUID = direct || mapped || placeholderUUIDs[idx];
   const bustUrl = `https://skins.mcstats.com/bust/${finalUUID}`;
 
   return (
@@ -259,7 +245,7 @@ function PlayerCard({
       type="button"
       onClick={onClick}
       className={
-        "group relative w-full overflow-hidden rounded-xl border border-zinc-200 bg-white text-left shadow-sm transition-all dark:border-zinc-800 dark:bg-zinc-900 " +
+        "group relative w-full overflow-hidden rounded-xl border border-zinc-300 bg-white text-left shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 " +
         (onClick ? "hover:shadow-lg hover:scale-[1.01]" : "")
       }
     >
@@ -305,8 +291,35 @@ function PlayerCard({
           </div>
         </div>
       </div>
+
+      {(player.link || player.achievedAt) && (
+        <div className="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+          {player.achievedAt ? `Data: ${formatDisplayDate(player.achievedAt)}` : "Clique para ver detalhes"}
+        </div>
+      )}
     </button>
   );
+}
+
+function formatDisplayDate(raw: string | null | undefined): string {
+  const text = String(raw ?? "").trim();
+  if (!text) return "—";
+
+  const pt = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (pt) {
+    const dd = String(Math.max(1, Math.min(31, Number(pt[1])))).padStart(2, "0");
+    const mm = String(Math.max(1, Math.min(12, Number(pt[2])))).padStart(2, "0");
+    const yy = pt[3].slice(-2);
+    return `${dd}/${mm}/${yy}`;
+  }
+
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return text;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  }).format(parsed);
 }
 
 function getEmbedSrc(link: string | null): string | null {
@@ -374,9 +387,7 @@ function formatTimeMs(ms: number) {
   const totalSeconds = Math.floor(v / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  const millis = v % 1000;
   const mm = String(minutes).padStart(2, "0");
   const ss = String(seconds).padStart(2, "0");
-  const mmm = String(millis).padStart(3, "0");
-  return `${mm}:${ss}.${mmm}`;
+  return `${mm}:${ss}`;
 }

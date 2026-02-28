@@ -18,14 +18,14 @@ export function Tabs({ tabs, defaultTab, children }: TabsProps) {
 
   return (
     <div>
-      <div className="mb-8 flex justify-center">
-        <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mb-7 flex justify-center">
+        <div className="inline-flex rounded-2xl border border-zinc-200 bg-white/90 p-1.5 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/80">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                rounded-md px-6 py-2 text-sm font-semibold transition-all
+                rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all
                 ${
                   activeTab === tab.id
                     ? "bg-emerald-600 text-white shadow-sm dark:bg-emerald-500"

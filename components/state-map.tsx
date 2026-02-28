@@ -6,6 +6,26 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5map from "@amcharts/amcharts5/map";
 import am5geodata_brazilLow from "@amcharts/amcharts5-geodata/brazilLow";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import type { GeoJSON } from "geojson";
+
+type PolygonDataContext = {
+  value?: unknown;
+  uf?: unknown;
+  name?: unknown;
+};
+
+type PolygonDataItemLike = {
+  get?: (key: string) => unknown;
+  dataContext?: PolygonDataContext;
+};
+
+function getContext(target: { dataItem?: unknown }): PolygonDataContext {
+  const item = target.dataItem as PolygonDataItemLike | undefined;
+  const fromGet = item?.get?.("value");
+  const context = item?.dataContext ?? {};
+  if (fromGet !== undefined) return { ...context, value: fromGet };
+  return context;
+}
 
 export function StateMap({
   rows,
@@ -23,7 +43,9 @@ export function StateMap({
   const polygonSeriesRef = useRef<am5map.MapPolygonSeries | null>(null);
   const onSelectRef = useRef<typeof onSelect>(onSelect);
 
-  onSelectRef.current = onSelect;
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
 
   const mapData = useMemo(
     () => rows.map((r) => ({ id: r.amchartsId, value: r.value, uf: r.uf, name: r.name })),
@@ -50,7 +72,7 @@ export function StateMap({
 
     const polygonSeries = chart.series.push(
       am5map.MapPolygonSeries.new(root, {
-        geoJSON: am5geodata_brazilLow as any,
+        geoJSON: am5geodata_brazilLow as GeoJSON,
         valueField: "value",
         calculateAggregates: true,
       })
@@ -84,19 +106,19 @@ export function StateMap({
     ]);
 
     polygonSeries.mapPolygons.template.adapters.add("fill", (fill, target) => {
-      const v = Number((target.dataItem as any)?.get?.("value") ?? (target.dataItem as any)?.dataContext?.value ?? 0);
+      const v = Number(getContext(target).value ?? 0);
       if (!Number.isFinite(v) || v <= 0) return am5.color(0x0f172a);
       return fill;
     });
 
     polygonSeries.mapPolygons.template.adapters.add("fillOpacity", (op, target) => {
-      const v = Number((target.dataItem as any)?.get?.("value") ?? (target.dataItem as any)?.dataContext?.value ?? 0);
+      const v = Number(getContext(target).value ?? 0);
       if (!Number.isFinite(v) || v <= 0) return 0.35;
       return op;
     });
 
     polygonSeries.mapPolygons.template.events.on("click", (ev) => {
-      const dc = ev.target.dataItem?.dataContext as any;
+      const dc = getContext(ev.target);
       const uf = typeof dc?.uf === "string" ? dc.uf : "";
       const name = typeof dc?.name === "string" ? dc.name : uf;
       if (!uf) return;
@@ -113,7 +135,7 @@ export function StateMap({
   }, []);
 
   useEffect(() => {
-    polygonSeriesRef.current?.data.setAll(mapData as any);
+    polygonSeriesRef.current?.data.setAll(mapData);
   }, [mapData]);
 
   useEffect(() => {
@@ -121,7 +143,7 @@ export function StateMap({
     if (!polygonSeries || !selectedUF) return;
     const desired = String(selectedUF).toUpperCase();
     polygonSeries.mapPolygons.each((p) => {
-      const dc = p.dataItem?.dataContext as any;
+      const dc = getContext(p);
       const uf = typeof dc?.uf === "string" ? dc.uf.toUpperCase() : "";
       p.set("active", uf === desired);
     });

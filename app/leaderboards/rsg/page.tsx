@@ -1,64 +1,12 @@
-import { PageHeader } from "../../../components/page-header";
-import { PlayerLeaderboardView } from "../../../components/player-leaderboard-view";
-import { getRunsLeaderboard } from "../../../lib/repositories/leaderboards";
-import { readUUIDMap } from "../../../lib/uuids";
+import { redirect } from "next/navigation";
 
 export const revalidate = 500;
-
-const CATEGORIES = ["1.16", "1.16 SSG"] as const;
 
 export default async function RsgLeaderboardPage({
   searchParams,
 }: {
   searchParams?: { category?: string };
 }) {
-  const selected = CATEGORIES.includes((searchParams?.category ?? "") as (typeof CATEGORIES)[number])
-    ? ((searchParams?.category ?? "") as (typeof CATEGORIES)[number])
-    : "1.16";
-
-  const [runs, uuidMap] = await Promise.all([getRunsLeaderboard(selected, 100), readUUIDMap()]);
-  const rows = runs.map((r) => ({
-    name: r.name,
-    value: r.timeMs,
-    stateUF: r.stateUF,
-    achievedAt: r.achievedAt,
-    link: r.link,
-    description: r.description,
-    seed: r.seed,
-    bastion: r.bastion,
-  }));
-
-  return (
-    <div>
-      <PageHeader
-        title="Ranking BR"
-        subtitle="Ranking por categoria. Mostra apenas a melhor run de cada player."
-      />
-
-      <div className="mb-4 flex flex-wrap justify-center gap-2">
-        {CATEGORIES.map((cat) => (
-          <a
-            key={cat}
-            href={`/leaderboards/rsg?category=${encodeURIComponent(cat)}`}
-            className={
-              "rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm transition-all " +
-              (cat === selected
-                ? "border-emerald-500 bg-emerald-600 text-white"
-                : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800")
-            }
-          >
-            {cat}
-          </a>
-        ))}
-      </div>
-
-      <PlayerLeaderboardView
-        title={`Top Jogadores (${selected})`}
-        valueLabel=""
-        rows={rows}
-        uuidMap={uuidMap}
-        valueFormat="time_ms"
-      />
-    </div>
-  );
+  const selected = searchParams?.category === "1.16 SSG" ? "1.16 SSG" : "1.16";
+  redirect(`/leaderboards/mc?mode=rsg&category=${encodeURIComponent(selected)}`);
 }
