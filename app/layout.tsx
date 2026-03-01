@@ -26,8 +26,8 @@ const minecraftFont = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "Rankings Hub - Minecraft Speedrunning BR",
-  description: "Hub oficial de rankings da comunidade brasileira de Minecraft Speedrunning. Veja leaderboards de estados, earnings, RSG e ranked.",
+  title: "Minecraft Speedrunning BR",
+  description: "MCSR Brasil, vamo querer",
 };
 
 export default function RootLayout({
