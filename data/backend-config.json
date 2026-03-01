@@ -20,11 +20,11 @@
         {
           "slug": "bepe-zeeds",
           "title": "Evento Bepe Zeeds",
-          "subtitle": "Scout And Route",
+          "subtitle": "SSG",
           "description": "Evento de SSG com seeds diferenciadas, melhores tempos ganham.",
           "prizePool": "R$ 1000",
-          "startsAt": "2026-03-02",
-          "seeds": ["123456789", "-987654321", "4455667788", "4455667788", "4455667788"],
+          "startsAt": "2026-03-01",
+          "seeds": ["723257325530056766 ", "5828502342761681120 ", "6120126048742033424 ", "7737553215159643896", "-6504894542059302982"],
           "url": "https://script.google.com/macros/s/AKfycbxARXFN0yZfORTIpIEVu7u1SgpfdZApAjm3KcBv6rON7KIekXwMOPhLJ_iFyheUYd9oIA/exec?action=gettournamentdefault",
           "pageType": "ssg"
         }

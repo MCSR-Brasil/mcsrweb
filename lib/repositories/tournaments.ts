@@ -52,7 +52,16 @@ type RawSsgRun = {
   name: string | null;
   verified: boolean | null;
   time: string | null;
+  timeMs: number;
   boardLabel: string | null;
+};
+
+type SeedDescriptor = {
+  key: string;
+  label: string;
+  seedValue: string;
+  normalizedSeedValue: string;
+  normalizedLabel: string;
 };
 
 function sanitizePageType(v: string): BackendPageType {
@@ -88,6 +97,72 @@ const SSG_POINTS_BY_PLACE = [100, 80, 60, 40, 35, 30, 25, 20, 15, 10] as const;
 
 function normalizeRunnerName(input: string | null): string {
   return String(input ?? "").trim().toLowerCase();
+}
+
+function normalizeSeedToken(input: string): string {
+  return String(input ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+function extractSeedValue(input: string): string | null {
+  const text = String(input ?? "").trim();
+  if (!text) return null;
+
+  const paren = text.match(/\((-?\d+)\)/);
+  if (paren) return paren[1];
+
+  const direct = text.match(/^-?\d+$/);
+  if (direct) return direct[0];
+
+  const anyNumber = text.match(/-?\d{6,}/);
+  if (anyNumber) return anyNumber[0];
+
+  return null;
+}
+
+function extractSeedIndex(input: string): number | null {
+  const text = String(input ?? "").trim();
+  if (!text) return null;
+  const match = text.match(/^seed\s*(\d+)/i);
+  if (!match) return null;
+  const parsed = Number(match[1]);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  return parsed - 1;
+}
+
+function buildSeedDescriptors(seeds: string[]): SeedDescriptor[] {
+  return seeds.map((seed, idx) => {
+    const seedValue = String(seed ?? "").trim();
+    const normalizedSeedValue = normalizeSeedToken(extractSeedValue(seedValue) ?? seedValue);
+    const label = `Seed ${idx + 1}`;
+    return {
+      key: `seed-${idx + 1}`,
+      label,
+      seedValue,
+      normalizedSeedValue,
+      normalizedLabel: normalizeSeedToken(label),
+    };
+  });
+}
+
+function resolveSeedIndex(boardLabel: string | null, seeds: SeedDescriptor[]): number | null {
+  const raw = String(boardLabel ?? "").trim();
+  if (!raw || seeds.length === 0) return null;
+
+  const fromLabelIndex = extractSeedIndex(raw);
+  if (fromLabelIndex !== null && fromLabelIndex >= 0 && fromLabelIndex < seeds.length) return fromLabelIndex;
+
+  const normalized = normalizeSeedToken(raw);
+  const byLabel = seeds.findIndex((seed) => seed.normalizedLabel === normalized);
+  if (byLabel >= 0) return byLabel;
+
+  const value = normalizeSeedToken(extractSeedValue(raw) ?? raw);
+  const byValue = seeds.findIndex((seed) => seed.normalizedSeedValue === value || normalizeSeedToken(seed.seedValue) === value);
+  if (byValue >= 0) return byValue;
+
+  return null;
 }
 
 function slugifyBoardKey(input: string, fallbackIndex: number): string {
@@ -232,7 +307,7 @@ function parseVerified(raw: string): boolean | null {
   return null;
 }
 
-async function readSsgSheetData(sourceUrl?: string): Promise<SsgTournamentSheetData> {
+async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = []): Promise<SsgTournamentSheetData> {
   if (!sourceUrl) return { title: null, description: null, links: [], boards: [], scoreboard: [] };
 
   const rows = await fetchRowsFromUrl(sourceUrl);
@@ -244,69 +319,106 @@ async function readSsgSheetData(sourceUrl?: string): Promise<SsgTournamentSheetD
     .map((v) => parseMarkdownLink(v))
     .filter((v): v is { label: string; href: string } => Boolean(v));
 
+  const seedDescriptors = buildSeedDescriptors(configuredSeeds);
   const runs: RawSsgRun[] = [];
   for (const row of rows.slice(5)) {
     const name = String(row?.[0] ?? "").trim() || null;
     const verified = parseVerified(String(row?.[1] ?? ""));
     const time = String(row?.[2] ?? "").trim() || null;
+    const timeMs = parseTimeToMs(time);
     const boardLabel = String(row?.[3] ?? "").trim() || null;
     if (!name && verified === null && !time && !boardLabel) continue;
-    if (!boardLabel || !name || !time) continue;
-    runs.push({ name, verified, time, boardLabel });
+    if (!boardLabel || !name || !time || timeMs === null) continue;
+    runs.push({ name, verified, time, timeMs, boardLabel });
   }
 
-  const grouped = new Map<string, RawSsgRun[]>();
-  for (const run of runs) {
-    const label = String(run.boardLabel ?? "").trim();
-    if (!label) continue;
-    if (!grouped.has(label)) grouped.set(label, []);
-    grouped.get(label)?.push(run);
-  }
-
-  const boards: TournamentSsgBoard[] = Array.from(grouped.entries()).map(([label, boardRuns], idx) => {
-    const fastestByRunner = new Map<string, RawSsgRun>();
-    for (const run of boardRuns) {
-      const key = normalizeRunnerName(run.name);
-      if (!key) continue;
-
-      const current = fastestByRunner.get(key);
-      if (!current) {
-        fastestByRunner.set(key, run);
-        continue;
-      }
-
-      const currentMs = parseTimeToMs(current.time);
-      const nextMs = parseTimeToMs(run.time);
-      if (currentMs === null && nextMs !== null) {
-        fastestByRunner.set(key, run);
-        continue;
-      }
-      if (currentMs !== null && nextMs !== null && nextMs < currentMs) {
-        fastestByRunner.set(key, run);
-      }
+  let boards: TournamentSsgBoard[];
+  if (seedDescriptors.length > 0) {
+    const groupedBySeedIndex = new Map<number, RawSsgRun[]>();
+    for (const run of runs) {
+      const seedIndex = resolveSeedIndex(run.boardLabel, seedDescriptors);
+      if (seedIndex === null) continue;
+      if (!groupedBySeedIndex.has(seedIndex)) groupedBySeedIndex.set(seedIndex, []);
+      groupedBySeedIndex.get(seedIndex)?.push(run);
     }
 
-    const results = Array.from(fastestByRunner.values())
-      .map((item): TournamentSsgResult => ({
-        name: item.name,
-        verified: item.verified,
-        time: item.time,
-      }))
-      .sort((a, b) => {
-        const av = parseTimeToMs(a.time);
-        const bv = parseTimeToMs(b.time);
-        if (av === null && bv === null) return String(a.name ?? "").localeCompare(String(b.name ?? ""), "pt-BR");
-        if (av === null) return 1;
-        if (bv === null) return -1;
-        return av - bv;
-      });
+    boards = seedDescriptors.map((seed, seedIndex) => {
+      const boardRuns = groupedBySeedIndex.get(seedIndex) ?? [];
+      const fastestByRunner = new Map<string, RawSsgRun>();
+      for (const run of boardRuns) {
+        const key = normalizeRunnerName(run.name);
+        if (!key) continue;
 
-    return {
-      key: slugifyBoardKey(label, idx),
-      label,
-      results,
-    };
-  });
+        const current = fastestByRunner.get(key);
+        if (!current || run.timeMs < current.timeMs) {
+          fastestByRunner.set(key, run);
+        }
+      }
+
+      const results = Array.from(fastestByRunner.values())
+        .map((item): TournamentSsgResult => ({
+          name: item.name,
+          verified: item.verified,
+          time: item.time,
+        }))
+        .sort((a, b) => {
+          const av = parseTimeToMs(a.time);
+          const bv = parseTimeToMs(b.time);
+          if (av === null && bv === null) return String(a.name ?? "").localeCompare(String(b.name ?? ""), "pt-BR");
+          if (av === null) return 1;
+          if (bv === null) return -1;
+          return av - bv;
+        });
+
+      return {
+        key: seed.key,
+        label: seed.label,
+        results,
+      };
+    });
+  } else {
+    const grouped = new Map<string, RawSsgRun[]>();
+    for (const run of runs) {
+      const label = String(run.boardLabel ?? "").trim();
+      if (!label) continue;
+      if (!grouped.has(label)) grouped.set(label, []);
+      grouped.get(label)?.push(run);
+    }
+
+    boards = Array.from(grouped.entries()).map(([label, boardRuns], idx) => {
+      const fastestByRunner = new Map<string, RawSsgRun>();
+      for (const run of boardRuns) {
+        const key = normalizeRunnerName(run.name);
+        if (!key) continue;
+
+        const current = fastestByRunner.get(key);
+        if (!current || run.timeMs < current.timeMs) {
+          fastestByRunner.set(key, run);
+        }
+      }
+
+      const results = Array.from(fastestByRunner.values())
+        .map((item): TournamentSsgResult => ({
+          name: item.name,
+          verified: item.verified,
+          time: item.time,
+        }))
+        .sort((a, b) => {
+          const av = parseTimeToMs(a.time);
+          const bv = parseTimeToMs(b.time);
+          if (av === null && bv === null) return String(a.name ?? "").localeCompare(String(b.name ?? ""), "pt-BR");
+          if (av === null) return 1;
+          if (bv === null) return -1;
+          return av - bv;
+        });
+
+      return {
+        key: slugifyBoardKey(label, idx),
+        label,
+        results,
+      };
+    });
+  }
 
   const scoreboardMap = new Map<string, TournamentSsgScoreRow>();
   for (const board of boards) {
@@ -364,14 +476,14 @@ export async function getTournamentPageData(slug: string): Promise<TournamentPag
   if (!entry) return null;
 
   const pageType = sanitizePageType(entry.pageType ?? getTournamentDefaultType());
+  const seeds = sanitizeSeeds(entry.seeds);
   const defaultHdr = pageType === "ssg" ? null : await readDefaultSheetData(entry.url);
-  const ssgHdr = pageType === "ssg" ? await readSsgSheetData(entry.url) : null;
+  const ssgHdr = pageType === "ssg" ? await readSsgSheetData(entry.url, seeds) : null;
   const firstBoardResults = (ssgHdr?.boards[0]?.results ?? []).map((item: TournamentSsgResult) => ({
     uuid: null,
     name: item.name,
     prize: item.time,
   }));
-  const seeds = sanitizeSeeds(entry.seeds);
 
   return {
     slug: entry.slug,

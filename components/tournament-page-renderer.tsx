@@ -124,7 +124,7 @@ function SsgTournamentLayout({ data }: { data: TournamentPageData }) {
                   type="button"
                   onClick={() => setSelectedTabKey(tab.key)}
                   className={
-                    "rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wider transition-all " +
+                    "whitespace-nowrap rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wider transition-all " +
                     (tab.key === selectedTab.key
                       ? "border-emerald-500 bg-emerald-600 text-white shadow-sm"
                       : "border-zinc-300 bg-white text-zinc-700 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200")
