@@ -201,6 +201,7 @@ function SsgResultCard({
 }) {
   const placementStyle = getPlacementStyle(place);
   const isNotVerified = result.verified === false;
+  const skinUrl = skinBustUrlByName(result.name);
 
   return (
     <article className={`relative overflow-hidden rounded-2xl border p-4 ${placementStyle.cardClass}`}>
@@ -219,7 +220,16 @@ function SsgResultCard({
       ) : null}
 
       <div className="mt-3 flex items-center justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
+          {skinUrl ? (
+            <img
+              src={skinUrl}
+              alt={`${result.name ?? "Player"} skin`}
+              className="h-12 w-12 rounded-lg border border-zinc-300 bg-zinc-100 object-cover dark:border-zinc-700 dark:bg-zinc-900"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          ) : null}
           <div className={`truncate text-lg font-extrabold ${placementStyle.nameClass}`}>{result.name ?? "TBD"}</div>
         </div>
 
@@ -362,6 +372,12 @@ function skinBustUrl(uuid: string | null): string | null {
   const rawUuid = String(uuid ?? "").trim();
   if (!rawUuid) return null;
   return `https://skins.mcstats.com/bust/${rawUuid}`;
+}
+
+function skinBustUrlByName(name: string | null): string | null {
+  const rawName = String(name ?? "").trim();
+  if (!rawName) return null;
+  return `https://skins.mcstats.com/bust/${encodeURIComponent(rawName)}`;
 }
 
 function TournamentMetaChips({
