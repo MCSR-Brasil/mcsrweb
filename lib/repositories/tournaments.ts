@@ -350,25 +350,16 @@ async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = 
         if (!key) continue;
 
         const current = fastestByRunner.get(key);
-        if (!current || run.timeMs < current.timeMs) {
+        if (!current) {
           fastestByRunner.set(key, run);
         }
       }
 
-      const results = Array.from(fastestByRunner.values())
-        .map((item): TournamentSsgResult => ({
-          name: item.name,
-          verified: item.verified,
-          time: item.time,
-        }))
-        .sort((a, b) => {
-          const av = parseTimeToMs(a.time);
-          const bv = parseTimeToMs(b.time);
-          if (av === null && bv === null) return String(a.name ?? "").localeCompare(String(b.name ?? ""), "pt-BR");
-          if (av === null) return 1;
-          if (bv === null) return -1;
-          return av - bv;
-        });
+      const results = Array.from(fastestByRunner.values()).map((item): TournamentSsgResult => ({
+        name: item.name,
+        verified: item.verified,
+        time: item.time,
+      }));
 
       return {
         key: seed.key,
@@ -392,25 +383,16 @@ async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = 
         if (!key) continue;
 
         const current = fastestByRunner.get(key);
-        if (!current || run.timeMs < current.timeMs) {
+        if (!current) {
           fastestByRunner.set(key, run);
         }
       }
 
-      const results = Array.from(fastestByRunner.values())
-        .map((item): TournamentSsgResult => ({
-          name: item.name,
-          verified: item.verified,
-          time: item.time,
-        }))
-        .sort((a, b) => {
-          const av = parseTimeToMs(a.time);
-          const bv = parseTimeToMs(b.time);
-          if (av === null && bv === null) return String(a.name ?? "").localeCompare(String(b.name ?? ""), "pt-BR");
-          if (av === null) return 1;
-          if (bv === null) return -1;
-          return av - bv;
-        });
+      const results = Array.from(fastestByRunner.values()).map((item): TournamentSsgResult => ({
+        name: item.name,
+        verified: item.verified,
+        time: item.time,
+      }));
 
       return {
         key: slugifyBoardKey(label, idx),
