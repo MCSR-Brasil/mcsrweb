@@ -325,10 +325,10 @@ async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = 
     const name = String(row?.[0] ?? "").trim() || null;
     const verified = parseVerified(String(row?.[1] ?? ""));
     const time = String(row?.[2] ?? "").trim() || null;
-    const timeMs = parseTimeToMs(time);
+    const timeMs = parseTimeToMs(time) ?? Number.POSITIVE_INFINITY;
     const boardLabel = String(row?.[3] ?? "").trim() || null;
     if (!name && verified === null && !time && !boardLabel) continue;
-    if (!boardLabel || !name || !time || timeMs === null) continue;
+    if (!boardLabel || !name || !time) continue;
     runs.push({ name, verified, time, timeMs, boardLabel });
   }
 
@@ -375,7 +375,7 @@ async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = 
         label: seed.label,
         results,
       };
-    });
+    }).filter((board) => board.results.length > 0);
   } else {
     const grouped = new Map<string, RawSsgRun[]>();
     for (const run of runs) {
