@@ -178,6 +178,7 @@ function SsgTournamentLayout({ data }: { data: TournamentPageData }) {
 
 function SsgScoreboardCard({ place, row }: { place: number; row: TournamentSsgScoreRow }) {
   const placementStyle = getPlacementStyle(place);
+  const skinUrl = skinBustUrlByName(row.name);
 
   return (
     <article className={`relative overflow-hidden rounded-2xl border p-4 ${placementStyle.cardClass}`}>
@@ -185,7 +186,18 @@ function SsgScoreboardCard({ place, row }: { place: number; row: TournamentSsgSc
       <div className={`text-xs font-black uppercase tracking-[0.14em] ${placementStyle.rankClass}`}>#{place}</div>
 
       <div className="mt-3 flex items-center justify-between gap-3">
-        <div className={`truncate text-lg font-extrabold ${placementStyle.nameClass}`}>{row.name || "TBD"}</div>
+        <div className="flex min-w-0 items-center gap-3">
+          {skinUrl ? (
+            <img
+              src={skinUrl}
+              alt={`${row.name || "Player"} skin`}
+              className="h-12 w-12 rounded-lg border border-zinc-300 bg-zinc-100 object-cover dark:border-zinc-700 dark:bg-zinc-900"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          ) : null}
+          <div className={`truncate text-lg font-extrabold ${placementStyle.nameClass}`}>{row.name || "TBD"}</div>
+        </div>
         <div className={`shrink-0 text-base font-black ${placementStyle.prizeClass}`}>{row.points} pts</div>
       </div>
     </article>
@@ -377,7 +389,7 @@ function skinBustUrl(uuid: string | null): string | null {
 function skinBustUrlByName(name: string | null): string | null {
   const rawName = String(name ?? "").trim();
   if (!rawName) return null;
-  return `https://skins.mcstats.com/bust/${encodeURIComponent(rawName)}`;
+  return `https://mc-heads.net/avatar/${encodeURIComponent(rawName)}/100`;
 }
 
 function TournamentMetaChips({
