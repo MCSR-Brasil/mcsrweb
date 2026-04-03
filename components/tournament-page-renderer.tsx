@@ -214,9 +214,11 @@ function SsgResultCard({
   const placementStyle = getPlacementStyle(place);
   const isNotVerified = result.verified === false;
   const skinUrl = skinBustUrlByName(result.name);
+  const vodHref = String(result.vodUrl ?? "").trim() || null;
 
-  return (
-    <article className={`relative overflow-hidden rounded-2xl border p-4 ${placementStyle.cardClass}`}>
+
+  const inner = (
+    <>
       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${placementStyle.barClass}`} />
       <div className={`text-xs font-black uppercase tracking-[0.14em] ${placementStyle.rankClass}`}>#{place}</div>
 
@@ -247,8 +249,24 @@ function SsgResultCard({
 
         <div className={`shrink-0 text-xl font-semibold ${placementStyle.prizeClass}`}>{result.time ?? "—"}</div>
       </div>
-    </article>
+    </>
   );
+
+  if (vodHref) {
+    return (
+      <a
+        href={vodHref}
+        target="_blank"
+        rel="noreferrer"
+        className={`relative block overflow-hidden rounded-2xl border p-4 outline-none transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${placementStyle.cardClass} cursor-pointer`}
+        title="Abrir vídeo"
+      >
+        {inner}
+      </a>
+    );
+  }
+
+  return <article className={`relative overflow-hidden rounded-2xl border p-4 ${placementStyle.cardClass}`}>{inner}</article>;
 }
 
 function getPlacementStyle(place: number) {

@@ -35,6 +35,7 @@ export type TournamentSsgResult = {
   name: string | null;
   verified: boolean | null;
   time: string | null;
+  vodUrl?: string | null;
 };
 
 export type TournamentSsgBoard = {
@@ -54,6 +55,7 @@ type RawSsgRun = {
   time: string | null;
   timeMs: number;
   boardLabel: string | null;
+  vodUrl: string | null;
 };
 
 type SeedDescriptor = {
@@ -327,9 +329,10 @@ async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = 
     const time = String(row?.[2] ?? "").trim() || null;
     const timeMs = parseTimeToMs(time) ?? Number.POSITIVE_INFINITY;
     const boardLabel = String(row?.[3] ?? "").trim() || null;
+    const vodUrl = String(row?.[4] ?? "").trim() || null;
     if (!name && verified === null && !time && !boardLabel) continue;
     if (!boardLabel || !name || !time) continue;
-    runs.push({ name, verified, time, timeMs, boardLabel });
+    runs.push({ name, verified, time, timeMs, boardLabel, vodUrl });
   }
 
   let boards: TournamentSsgBoard[];
@@ -359,6 +362,7 @@ async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = 
         name: item.name,
         verified: item.verified,
         time: item.time,
+        vodUrl: item.vodUrl,
       }));
 
       return {
@@ -392,6 +396,7 @@ async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = 
         name: item.name,
         verified: item.verified,
         time: item.time,
+        vodUrl: item.vodUrl,
       }));
 
       return {
