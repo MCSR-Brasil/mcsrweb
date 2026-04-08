@@ -18,7 +18,7 @@ export type PlayerRow = {
   bastion?: string | null;
 };
 
-type ValueFormat = "number" | "time_ms";
+type ValueFormat = "number" | "time_ms" | "string";
 
 function rankColor(index: number) {
   if (index === 0) return "from-yellow-400 to-amber-500";

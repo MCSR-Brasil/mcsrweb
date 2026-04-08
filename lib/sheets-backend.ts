@@ -27,7 +27,7 @@ export function parseTimeToMs(raw: unknown): number | null {
 
 async function fetchJson(url: string): Promise<AppsScriptResponse | null> {
   try {
-    const res = await fetch(url, { method: "GET", cache: "no-store" });
+    const res = await fetch(url, { method: "GET", next: { revalidate: 500 } });
     if (!res.ok) return null;
     const json = (await res.json()) as AppsScriptResponse;
     return json;
@@ -86,7 +86,7 @@ export async function fetchSheetRangeCsv(sheetId: string, range: string, sheetNa
       url.searchParams.set("sheet", normalizeText(sheetName));
     }
 
-    const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
+    const res = await fetch(url.toString(), { method: "GET", next: { revalidate: 500 } });
     if (!res.ok) return [];
     const text = await res.text();
     const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);

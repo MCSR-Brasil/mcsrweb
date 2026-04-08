@@ -193,7 +193,7 @@ async function readRankedAppsScript(): Promise<PlayerLeaderboardRow[]> {
   }
 
   try {
-    const res = await fetch(MCSR_RANKED_BR_API, { method: "GET", cache: "no-store" });
+    const res = await fetch(MCSR_RANKED_BR_API, { method: "GET", next: { revalidate: 500 } });
     if (res.ok) {
       const json = (await res.json()) as {
         status?: string;

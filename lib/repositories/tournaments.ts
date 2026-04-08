@@ -254,7 +254,7 @@ async function fetchRowsFromUrl(sourceUrl?: string): Promise<string[][]> {
   if (!url) return [];
 
   try {
-    const res = await fetch(url, { method: "GET", cache: "no-store" });
+    const res = await fetch(url, { method: "GET", next: { revalidate: 500 } });
     if (!res.ok) return [];
     const contentType = String(res.headers.get("content-type") ?? "").toLowerCase();
 

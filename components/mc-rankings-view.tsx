@@ -38,7 +38,7 @@ export function McRankingsView({
 
   const title = mode === "ranked" ? "Top Jogadores (Ranked)" : `Top Jogadores (${rsgCategory})`;
   const valueLabel = mode === "ranked" ? "Elo" : "";
-  const valueFormat = mode === "ranked" ? "number" : "time_ms";
+  const valueFormat = mode === "ranked" ? "string" : "time_ms";
   const modeItems: { id: Mode; label: string }[] = [
     { id: "rsg", label: "RSG" },
     { id: "ranked", label: "Ranked" },
@@ -73,7 +73,7 @@ export function McRankingsView({
             className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-bold text-zinc-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
           >
             <option value="1.16">RSG 1.16</option>
-            <option value="1.16 SSG">RSG 1.16 SSG</option>
+            <option value="1.16 SSG">SSG 1.16</option>
           </select>
         </div>
       ) : null}
