@@ -36,7 +36,7 @@ export function TabContent({
               <div className="mt-2 text-sm font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">R$1.700 pendente</div>
             </div>
             
-            {activeTab === "rankings" && <RankingsView leaders={leaders} uuidMap={uuidMap} />}
+            {activeTab === "rankings" && <RankingsView leaders={leaders} uuidMap={uuidMap} events={events} />}
             {activeTab === "events" && <EventsView events={events} />}
           </>
         )}
@@ -45,11 +45,30 @@ export function TabContent({
   );
 }
 
+function parseEventDateMs(raw: string | null): number {
+  const text = String(raw ?? "").trim();
+  if (!text) return 0;
+  const direct = new Date(text);
+  if (!Number.isNaN(direct.getTime())) return direct.getTime();
+
+  const m = text.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (!m) return 0;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const yearRaw = Number(m[3]);
+  const year = yearRaw < 100 ? 2000 + yearRaw : yearRaw;
+  if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) return 0;
+  const d = new Date(year, month - 1, day);
+  const ms = d.getTime();
+  return Number.isNaN(ms) ? 0 : ms;
+}
+
 function EventsView({ events }: { events: EventRow[] }) {
   const sorted = [...events].sort((a, b) => {
-    const da = String(a.date ?? "").trim();
-    const db = String(b.date ?? "").trim();
-    return db.localeCompare(da);
+    const ta = parseEventDateMs(a.date);
+    const tb = parseEventDateMs(b.date);
+    if (tb !== ta) return tb - ta;
+    return String(a.event ?? "").localeCompare(String(b.event ?? ""), "pt-BR");
   });
 
   return (

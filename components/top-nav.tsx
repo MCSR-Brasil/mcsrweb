@@ -36,7 +36,7 @@ export function TopNav() {
           </button>
           <Link
             href="/"
-            className="font-minecraft block truncate bg-gradient-to-r from-emerald-600 via-zinc-900 to-emerald-700 bg-clip-text text-xl font-black tracking-tight text-transparent dark:via-zinc-100"
+            className="font-minecraft block truncate text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-50"
           >
             MCSR BR
           </Link>

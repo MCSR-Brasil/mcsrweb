@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStatePlayers } from "../../../../../lib/repositories/states";
 
-export const revalidate = 0;
+export const revalidate = 500;
 
 export async function GET(req: Request, context: { params: Promise<{ uf: string }> }) {
   const { uf: rawUf } = await context.params;
@@ -12,9 +12,25 @@ export async function GET(req: Request, context: { params: Promise<{ uf: string 
   const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.floor(limitRaw) : 50;
 
   if (!uf) {
-    return NextResponse.json({ rows: [] }, { status: 200 });
+    return NextResponse.json(
+      { rows: [] },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=500, stale-while-revalidate=86400",
+        },
+      }
+    );
   }
 
   const rows = await getStatePlayers(uf, limit, category);
-  return NextResponse.json({ rows }, { status: 200 });
+  return NextResponse.json(
+    { rows },
+    {
+      status: 200,
+      headers: {
+        "Cache-Control": "public, s-maxage=500, stale-while-revalidate=86400",
+      },
+    }
+  );
 }
