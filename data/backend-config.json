@@ -27,6 +27,16 @@
           "seeds": ["723257325530056766 ", "6493508018528835824 ", "6120126048742033424 ", "7737553215159643896", "-6504894542059302982"],
           "url": "https://script.google.com/macros/s/AKfycbxARXFN0yZfORTIpIEVu7u1SgpfdZApAjm3KcBv6rON7KIekXwMOPhLJ_iFyheUYd9oIA/exec?action=gettournamentdefault",
           "pageType": "ssg"
+        },
+        {
+          "slug": "metodo-tortura-entretenimento-do-pato",
+          "title": "Método de Tortura e Entretenimento do Pato",
+          "subtitle": "Evento na Ranked",
+          "description": "24 horas de grind de ranked, quem conseguir mais vitórias no final leva o prêmio.",
+          "prizePool": "R$ ???",
+          "startsAt": "2026-04-11",
+          "url": "https://script.google.com/macros/s/AKfycby7bnKQ_SoJvSedwIFggSOUYPB29QZJQr79PBR9sAUigxXfeVhQSaktyviYUtxpT_NyvQ/exec?action=gettournamentdefault",
+          "pageType": "default"
         }
       ]
     }
