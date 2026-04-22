@@ -17,13 +17,23 @@
     "tournaments": {
       "defaultType": "default",
       "entries": [
+          {
+          "slug": "xandehr-3",
+          "title": "XandeHouer 3",
+          "subtitle": "Evento de FSG pogloot",
+          "description": "Evento de arrecadação de dinheiro, quem completa mais runs ate o final do evento leva o prêmio.",
+          "prizePool": "R$ 220",
+          "startsAt": "2026-04-22",
+          "url": "https://script.google.com/macros/s/AKfycbxPabg-PQwByQJsA-Vv8r1bHjrOuxfJ278OOH4onlibQxikcCRL8PKtvQIboL8b19sJHA/exec?action=gettournamentdefault",
+          "pageType": "default"
+        },
                 {
           "slug": "metodo-tortura-entretenimento-do-pato",
           "title": "Método de Tortura e Entretenimento do Pato",
           "subtitle": "Evento na Ranked",
           "description": "24 horas de grind de ranked, quem conseguir mais vitórias no final leva o prêmio.",
-          "prizePool": "R$ ???",
-          "startsAt": "2026-04-11",
+          "prizePool": "R$ 150",
+          "startsAt": "2026-04-13",
           "url": "https://script.google.com/macros/s/AKfycby7bnKQ_SoJvSedwIFggSOUYPB29QZJQr79PBR9sAUigxXfeVhQSaktyviYUtxpT_NyvQ/exec?action=gettournamentdefault",
           "pageType": "default"
         },
