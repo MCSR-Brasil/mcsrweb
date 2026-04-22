@@ -19,11 +19,11 @@
       "entries": [
           {
           "slug": "xandehr-3",
-          "title": "XandeHouer 3",
+          "title": "XandeHouer 20",
           "subtitle": "Evento de FSG pogloot",
           "description": "Evento de arrecadação de dinheiro, quem completa mais runs ate o final do evento leva o prêmio.",
           "prizePool": "R$ 220",
-          "startsAt": "2026-04-22",
+          "startsAt": "2026-04-21",
           "url": "https://script.google.com/macros/s/AKfycbxPabg-PQwByQJsA-Vv8r1bHjrOuxfJ278OOH4onlibQxikcCRL8PKtvQIboL8b19sJHA/exec?action=gettournamentdefault",
           "pageType": "default"
         },
