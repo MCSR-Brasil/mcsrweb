@@ -41,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${minecraftFont.variable} ${minecraftiaFont.variable} bg-background text-foreground antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${minecraftFont.variable} ${minecraftiaFont.variable} font-minecraft-body bg-background text-foreground antialiased`}
       >
         <SiteShell>{children}</SiteShell>
       </body>
