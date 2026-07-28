@@ -194,7 +194,7 @@ function PlayerCard({
 
         <div className="flex min-w-0 flex-1 items-center justify-between p-3 md:p-5">
           <div className="min-w-0">
-            <h3 className="truncate text-xl font-extrabold text-zinc-900 dark:text-zinc-50 md:text-2xl">{player.name}</h3>
+            <h3 className="truncate text-xl font-extrabold leading-none text-zinc-900 dark:text-zinc-50 md:text-2xl">{player.name}</h3>
           </div>
           <div className="text-right">
             <div className="text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 md:text-3xl">

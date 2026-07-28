@@ -29,7 +29,7 @@ export function TopNav() {
           <button
             type="button"
             onClick={handleBack}
-            className="rounded-full border border-border bg-card px-3 py-2 text-[11px] font-black uppercase tracking-wider text-foreground transition-colors hover:border-primary hover:text-primary"
+            className="inline-flex items-center justify-center rounded-full border border-border bg-card px-3 py-2 text-[11px] font-black uppercase leading-none tracking-wider text-foreground transition-colors hover:border-primary hover:text-primary"
             aria-label="Voltar para a página anterior"
           >
             Voltar
@@ -46,7 +46,7 @@ export function TopNav() {
           {navItems.map((item) => {
             const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
             const cls =
-              "rounded-full border px-4 py-2 text-[11px] font-black uppercase tracking-wider transition-all " +
+              "inline-flex items-center justify-center rounded-full border px-4 py-2 text-[11px] font-black uppercase leading-none tracking-wider transition-all " +
               (active
                 ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                 : "border-border bg-card text-foreground hover:border-primary hover:text-primary");

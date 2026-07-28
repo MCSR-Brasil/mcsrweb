@@ -91,11 +91,13 @@
 .font-minecraft {
   font-family: var(--font-minecraft);
   letter-spacing: 0.04em;
+  line-height: 1.15;
 }
 
 .font-minecraft-body {
   font-family: var(--font-minecraft-body);
   letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 body {
