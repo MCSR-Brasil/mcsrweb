@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
+import type { StateLeaderboardRow, StatePlayerRow, StatePlayersByUF } from "../lib/repositories/states";
 import { normalizeName } from "../lib/normalize";
 import type { UUIDMap } from "../lib/uuids";
 import { StateFlag } from "./state-flag";
@@ -94,7 +94,7 @@ export function StateLeaderboard({
                   {players.length} jogador{players.length === 1 ? "" : "es"}
                 </div>
                 {onStateCategoryChange ? (
-                  <div className="mt-2 inline-flex rounded-lg border border-border bg-secondary p-1">
+                  <div className="mt-2 inline-flex rounded-xl border border-border bg-secondary p-1">
                     {[
                       { id: "rsg" as const, label: "RSG 1.16" },
                       { id: "ssg" as const, label: "SSG 1.16" },
@@ -104,7 +104,7 @@ export function StateLeaderboard({
                         type="button"
                         onClick={() => onStateCategoryChange(item.id)}
                         className={
-                          "rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-wider transition-all " +
+                          "rounded-lg px-4 py-1.5 text-xs font-black uppercase tracking-wider transition-all " +
                           (stateCategory === item.id
                             ? "bg-primary text-primary-foreground shadow-sm"
                             : "text-secondary-foreground hover:bg-background hover:text-foreground")
@@ -144,9 +144,8 @@ export function StateLeaderboard({
                   <SidebarPlayerRow
                     key={`${p.name}-${idx}`}
                     rank={idx + 1}
-                    name={p.name}
-                    timeMs={p.timeMs}
-                    link={p.link ?? null}
+                    player={p}
+                    category={stateCategory}
                     uuidMap={uuidMap}
                   />
                 ))}
@@ -172,17 +171,25 @@ export function StateLeaderboard({
 
 function SidebarPlayerRow({
   rank,
-  name,
-  timeMs,
-  link,
+  player,
+  category,
   uuidMap,
 }: {
   rank: number;
-  name: string;
-  timeMs: number;
-  link: string | null;
+  player: StatePlayerRow;
+  category: StateCategory;
   uuidMap?: UUIDMap;
 }) {
+  const name = player.name;
+  const rsg = { timeMs: player.rsgTimeMs, link: player.rsgLink, achievedAt: player.rsgAchievedAt };
+  const ssg = { timeMs: player.ssgTimeMs, link: player.ssgLink, achievedAt: player.ssgAchievedAt };
+  const selected = category === "rsg" ? rsg : ssg;
+  const fallback = category === "rsg" ? ssg : rsg;
+  const timeMs = selected.timeMs ?? fallback.timeMs ?? player.timeMs;
+  const link = selected.link ?? fallback.link ?? player.link ?? null;
+  const achievedAt = selected.achievedAt ?? fallback.achievedAt ?? player.achievedAt ?? null;
+  const isFallback = selected.timeMs == null && fallback.timeMs != null;
+
   const skinUrl = useMemo(() => skinAvatarUrl(name, uuidMap), [name, uuidMap]);
 
   return (

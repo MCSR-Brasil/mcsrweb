@@ -10,10 +10,8 @@ type McData = {
   rankedRows: PlayerRow[];
   rsg116Rows: PlayerRow[];
   rsgSsgRows: PlayerRow[];
-  stateRows116: StateLeaderboardRow[];
-  statePlayersByUF116: StatePlayersByUF;
-  stateRowsSsg: StateLeaderboardRow[];
-  statePlayersByUFSsg: StatePlayersByUF;
+  stateRows: StateLeaderboardRow[];
+  statePlayersByUF: StatePlayersByUF;
   uuidMap: UUIDMap;
 };
 
@@ -36,10 +34,8 @@ export function McRankingsPageClient({
       rankedRows={data.rankedRows}
       rsg116Rows={data.rsg116Rows}
       rsgSsgRows={data.rsgSsgRows}
-      stateRows116={data.stateRows116}
-      statePlayersByUF116={data.statePlayersByUF116}
-      stateRowsSsg={data.stateRowsSsg}
-      statePlayersByUFSsg={data.statePlayersByUFSsg}
+      stateRows={data.stateRows}
+      statePlayersByUF={data.statePlayersByUF}
       defaultMode={defaultMode}
       defaultRsgCategory={defaultRsgCategory}
     />

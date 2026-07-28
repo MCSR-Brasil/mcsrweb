@@ -16,10 +16,8 @@ export function McRankingsView({
   rankedRows,
   rsg116Rows,
   rsgSsgRows,
-  stateRows116,
-  statePlayersByUF116,
-  stateRowsSsg,
-  statePlayersByUFSsg,
+  stateRows,
+  statePlayersByUF,
   defaultMode,
   defaultRsgCategory,
 }: {
@@ -27,10 +25,8 @@ export function McRankingsView({
   rankedRows: PlayerRow[];
   rsg116Rows: PlayerRow[];
   rsgSsgRows: PlayerRow[];
-  stateRows116: StateLeaderboardRow[];
-  statePlayersByUF116: StatePlayersByUF;
-  stateRowsSsg: StateLeaderboardRow[];
-  statePlayersByUFSsg: StatePlayersByUF;
+  stateRows: StateLeaderboardRow[];
+  statePlayersByUF: StatePlayersByUF;
   defaultMode: Mode;
   defaultRsgCategory: RsgCategory;
 }) {
@@ -38,9 +34,6 @@ export function McRankingsView({
   const [rsgCategory, setRsgCategory] = useState<RsgCategory>(defaultRsgCategory);
   const [stateCategory, setStateCategory] = useState<StateCategory>("rsg");
   const [stateView, setStateView] = useState<"map" | "list">("map");
-
-  const currentStateRows = stateCategory === "rsg" ? stateRows116 : stateRowsSsg;
-  const currentStatePlayersByUF = stateCategory === "rsg" ? statePlayersByUF116 : statePlayersByUFSsg;
 
   const currentRows = useMemo(() => {
     if (mode === "ranked") return rankedRows;
@@ -101,8 +94,8 @@ export function McRankingsView({
 
         {stateView === "map" ? (
           <StateLeaderboard
-            rows={currentStateRows}
-            playersByUF={currentStatePlayersByUF}
+            rows={stateRows}
+            playersByUF={statePlayersByUF}
             stateCategory={stateCategory}
             onStateCategoryChange={setStateCategory}
             uuidMap={uuidMap}
@@ -115,7 +108,7 @@ export function McRankingsView({
               <h2 className="font-minecraft mb-6 text-center text-2xl font-black tracking-tight text-card-foreground">
                 Ranking por Estados
               </h2>
-              <StateLeaderboardList rows={currentStateRows} />
+              <StateLeaderboardList rows={stateRows} />
             </div>
           </div>
         )}
