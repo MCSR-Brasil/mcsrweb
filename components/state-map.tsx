@@ -162,10 +162,28 @@ function colorForValue(value: number, max: number): number {
   if (!Number.isFinite(value) || value <= 0) return 0x0f172a;
   const safeMax = Math.max(1, max);
   const t = safeMax === 1 ? 1 : Math.min(1, Math.sqrt((value - 1) / (safeMax - 1)));
-  const start = [253, 224, 71]; // yellow-300
-  const end = [220, 38, 38]; // red-600
-  const r = Math.round(start[0] + (end[0] - start[0]) * t);
-  const g = Math.round(start[1] + (end[1] - start[1]) * t);
-  const b = Math.round(start[2] + (end[2] - start[2]) * t);
+
+  const palette = [
+    { t: 0.0, rgb: [59, 130, 246] }, // blue-500
+    { t: 0.25, rgb: [34, 197, 94] }, // green-500
+    { t: 0.45, rgb: [250, 204, 21] }, // yellow-400
+    { t: 0.65, rgb: [249, 115, 22] }, // orange-500
+    { t: 0.85, rgb: [239, 68, 68] }, // red-500
+    { t: 1.0, rgb: [168, 85, 247] }, // purple-500
+  ];
+
+  let lower = palette[0];
+  let upper = palette[palette.length - 1];
+  for (let i = 0; i < palette.length - 1; i++) {
+    if (t >= palette[i].t && t <= palette[i + 1].t) {
+      lower = palette[i];
+      upper = palette[i + 1];
+      break;
+    }
+  }
+
+  const range = upper.t - lower.t || 1;
+  const localT = (t - lower.t) / range;
+  const [r, g, b] = lower.rgb.map((c, i) => Math.round(c + (upper.rgb[i] - c) * localT));
   return (r << 16) | (g << 8) | b;
 }

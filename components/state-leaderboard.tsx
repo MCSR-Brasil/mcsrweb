@@ -63,9 +63,11 @@ export function StateLeaderboard({
 
       <aside
         className={[
-          "z-20 flex flex-col border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-md transition-transform duration-300 ease-out dark:border-zinc-800 dark:bg-zinc-950/95",
-          "absolute inset-y-0 right-0 w-[min(92vw,520px)] border-l lg:static lg:w-[520px] lg:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "translate-x-full",
+          "z-20 flex flex-col border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-md transition-all duration-300 ease-out dark:border-zinc-800 dark:bg-zinc-950/95",
+          "absolute inset-y-0 right-0 border-l lg:static",
+          sidebarOpen
+            ? "w-[min(92vw,520px)] translate-x-0 lg:w-[520px]"
+            : "w-0 translate-x-full lg:hidden",
           withTopOverlay
             ? "top-20 h-[calc(100%-5rem)] rounded-l-2xl lg:top-0 lg:h-full lg:rounded-none"
             : "h-full",
