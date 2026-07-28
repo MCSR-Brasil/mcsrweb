@@ -54,9 +54,10 @@ Important split:
 - Tournament index cards (`/tournaments`) use config metadata only.
 - Tournament detail pages (`/tournaments/[slug]`) use fetched `url` content + `pageType` renderer.
 
-Fallback CSV files are still used when backend data is unavailable for existing leaderboard/earnings flows:
+Earnings data is loaded from the Apps Script `earnings` action.
 
-- `data/earnings.csv`
+Fallback CSV files are still used when backend data is unavailable for other leaderboard flows:
+
 - `data/uuid.csv`
 - `data/runs.csv`
 - `data/ranked.csv`

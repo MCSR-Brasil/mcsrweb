@@ -1,14 +1,11 @@
-import { getLeaderboardFromCSV, readEarningsCSV } from "../../../lib/earnings";
+import { getEarningsLeaderboard, readEarnings } from "../../../lib/earnings";
 import { readUUIDMap } from "../../../lib/uuids";
 import { TabContent } from "../../../components/tab-content";
 import { PageHeader } from "../../../components/page-header";
 
 export default async function EarningsLeaderboardPage() {
-  const [leaders, uuidMap, events] = await Promise.all([
-    getLeaderboardFromCSV(),
-    readUUIDMap(),
-    readEarningsCSV(),
-  ]);
+  const [events, uuidMap] = await Promise.all([readEarnings(), readUUIDMap()]);
+  const leaders = getEarningsLeaderboard(events);
 
   const leadersTotal = leaders.reduce((sum, l) => sum + l.earnings, 0);
   const emptyWinnersPrizepool = events
