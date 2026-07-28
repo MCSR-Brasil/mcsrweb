@@ -7,16 +7,22 @@ import type { UUIDMap } from "../lib/uuids";
 import { StateFlag } from "./state-flag";
 import { StateMap } from "./state-map";
 
+type StateCategory = "rsg" | "ssg";
+
 export function StateLeaderboard({
   rows,
   playersByUF,
   uuidMap,
+  stateCategory = "rsg",
+  onStateCategoryChange,
   embedded = false,
   withTopOverlay = false,
 }: {
   rows: StateLeaderboardRow[];
   playersByUF: StatePlayersByUF;
   uuidMap?: UUIDMap;
+  stateCategory?: StateCategory;
+  onStateCategoryChange?: (category: StateCategory) => void;
   embedded?: boolean;
   withTopOverlay?: boolean;
 }) {
@@ -84,11 +90,31 @@ export function StateLeaderboard({
                   <StateFlag uf={selectedUF} className="h-7 w-10 rounded border border-border object-cover shadow-sm" />
                   <span className="truncate">{selectedName}</span>
                 </div>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-secondary-foreground">
+                <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {players.length} jogador{players.length === 1 ? "" : "es"}
-                  <span className="text-muted-foreground">•</span>
-                  RSG 1.16
                 </div>
+                {onStateCategoryChange ? (
+                  <div className="mt-2 inline-flex rounded-lg border border-border bg-secondary p-1">
+                    {[
+                      { id: "rsg" as const, label: "RSG 1.16" },
+                      { id: "ssg" as const, label: "SSG 1.16" },
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => onStateCategoryChange(item.id)}
+                        className={
+                          "rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-wider transition-all " +
+                          (stateCategory === item.id
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-secondary-foreground hover:bg-background hover:text-foreground")
+                        }
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
               <button

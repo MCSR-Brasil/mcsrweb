@@ -9,14 +9,17 @@ import type { UUIDMap } from "../lib/uuids";
 
 type Mode = "rsg" | "ranked" | "states";
 type RsgCategory = "1.16" | "1.16 SSG";
+type StateCategory = "rsg" | "ssg";
 
 export function McRankingsView({
   uuidMap,
   rankedRows,
   rsg116Rows,
   rsgSsgRows,
-  stateRows,
-  statePlayersByUF,
+  stateRows116,
+  statePlayersByUF116,
+  stateRowsSsg,
+  statePlayersByUFSsg,
   defaultMode,
   defaultRsgCategory,
 }: {
@@ -24,14 +27,20 @@ export function McRankingsView({
   rankedRows: PlayerRow[];
   rsg116Rows: PlayerRow[];
   rsgSsgRows: PlayerRow[];
-  stateRows: StateLeaderboardRow[];
-  statePlayersByUF: StatePlayersByUF;
+  stateRows116: StateLeaderboardRow[];
+  statePlayersByUF116: StatePlayersByUF;
+  stateRowsSsg: StateLeaderboardRow[];
+  statePlayersByUFSsg: StatePlayersByUF;
   defaultMode: Mode;
   defaultRsgCategory: RsgCategory;
 }) {
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [rsgCategory, setRsgCategory] = useState<RsgCategory>(defaultRsgCategory);
+  const [stateCategory, setStateCategory] = useState<StateCategory>("rsg");
   const [stateView, setStateView] = useState<"map" | "list">("map");
+
+  const currentStateRows = stateCategory === "rsg" ? stateRows116 : stateRowsSsg;
+  const currentStatePlayersByUF = stateCategory === "rsg" ? statePlayersByUF116 : statePlayersByUFSsg;
 
   const currentRows = useMemo(() => {
     if (mode === "ranked") return rankedRows;
@@ -91,14 +100,22 @@ export function McRankingsView({
         </div>
 
         {stateView === "map" ? (
-          <StateLeaderboard rows={stateRows} playersByUF={statePlayersByUF} uuidMap={uuidMap} embedded withTopOverlay />
+          <StateLeaderboard
+            rows={currentStateRows}
+            playersByUF={currentStatePlayersByUF}
+            stateCategory={stateCategory}
+            onStateCategoryChange={setStateCategory}
+            uuidMap={uuidMap}
+            embedded
+            withTopOverlay
+          />
         ) : (
           <div className="mx-auto max-w-6xl px-4 pb-12 pt-24 sm:px-6 lg:px-8">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm shadow-primary/5 sm:p-8">
               <h2 className="font-minecraft mb-6 text-center text-2xl font-black tracking-tight text-card-foreground">
                 Ranking por Estados
               </h2>
-              <StateLeaderboardList rows={stateRows} />
+              <StateLeaderboardList rows={currentStateRows} />
             </div>
           </div>
         )}

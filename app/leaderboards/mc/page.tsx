@@ -27,12 +27,14 @@ export default async function McRankingsPage({
           : configDefaultMode;
   const defaultRsgCategory = params.category === "1.16 SSG" ? "1.16 SSG" : configDefaultCategory;
 
-  const [rsg116, rsgSsg, ranked, stateRows, statePlayersByUF, uuidMap] = await Promise.all([
+  const [rsg116, rsgSsg, ranked, stateRows116, statePlayersByUF116, stateRowsSsg, statePlayersByUFSsg, uuidMap] = await Promise.all([
     getRunsLeaderboard("1.16", 100),
     getRunsLeaderboard("1.16 SSG", 100),
     getRankedLeaderboard(100),
-    getStateLeaderboard(),
-    getStatePlayersByUF(50),
+    getStateLeaderboard("1.16"),
+    getStatePlayersByUF("1.16", 50),
+    getStateLeaderboard("1.16 SSG"),
+    getStatePlayersByUF("1.16 SSG", 50),
     readUUIDMap(),
   ]);
 
@@ -65,8 +67,10 @@ export default async function McRankingsPage({
         rankedRows: ranked,
         rsg116Rows,
         rsgSsgRows,
-        stateRows,
-        statePlayersByUF,
+        stateRows116,
+        statePlayersByUF116,
+        stateRowsSsg,
+        statePlayersByUFSsg,
       }}
       defaultMode={defaultMode}
       defaultRsgCategory={defaultRsgCategory}

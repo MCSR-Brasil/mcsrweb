@@ -19,18 +19,24 @@ export type StatePlayerRow = {
 
 export type StatePlayersByUF = Record<string, StatePlayerRow[]>;
 
+export type StateCategory = "1.16" | "1.16 SSG";
+
 type BuiltStateData = {
   leaderboard: StateLeaderboardRow[];
   playersByUF: StatePlayersByUF;
 };
 
-async function buildStateData(maxPlayersPerState = 50, fresh = false): Promise<BuiltStateData> {
-  const runs116 = await getRunsLeaderboard("1.16", 1000, fresh);
+async function buildStateData(
+  category: StateCategory = "1.16",
+  maxPlayersPerState = 50,
+  fresh = false
+): Promise<BuiltStateData> {
+  const runs = await getRunsLeaderboard(category, 1000, fresh);
 
   const byUFUniquePlayers = new Map<string, Set<string>>();
   const byUFPlayers = new Map<string, StatePlayerRow[]>();
 
-  for (const r of runs116) {
+  for (const r of runs) {
     const uf = String(r.stateUF ?? "").trim().toUpperCase();
     const name = String(r.name ?? "").trim();
     if (!uf || !name) continue;
@@ -65,26 +71,33 @@ async function buildStateData(maxPlayersPerState = 50, fresh = false): Promise<B
   return { leaderboard, playersByUF };
 }
 
-export async function getStateLeaderboard(limit = 27, fresh = false): Promise<StateLeaderboardRow[]> {
-  const built = await buildStateData(50, fresh);
+export async function getStateLeaderboard(
+  category: StateCategory = "1.16",
+  limit = 27,
+  fresh = false
+): Promise<StateLeaderboardRow[]> {
+  const built = await buildStateData(category, limit, fresh);
   return built.leaderboard.slice(0, limit);
 }
 
-export async function getStatePlayersByUF(limitPerState = 50, fresh = false): Promise<StatePlayersByUF> {
-  const built = await buildStateData(limitPerState, fresh);
+export async function getStatePlayersByUF(
+  category: StateCategory = "1.16",
+  limitPerState = 50,
+  fresh = false
+): Promise<StatePlayersByUF> {
+  const built = await buildStateData(category, limitPerState, fresh);
   return built.playersByUF;
 }
 
 export async function getStatePlayers(
   uf: string,
   limit = 50,
-  category = "Any%" as string,
+  category: StateCategory = "1.16",
   fresh = false
 ): Promise<StatePlayerRow[]> {
   const stateUF = uf.trim().toUpperCase();
   if (!stateUF) return [];
-  void category;
 
-  const playersByUF = await getStatePlayersByUF(limit, fresh);
+  const playersByUF = await getStatePlayersByUF(category, limit, fresh);
   return playersByUF[stateUF] ?? [];
 }
