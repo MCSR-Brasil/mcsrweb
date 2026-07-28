@@ -7,8 +7,8 @@
 }
 
 @font-face {
-  font-family: "Minecraftia";
-  src: url("/fonts/minecraftia/Minecraftia-Regular.ttf") format("truetype");
+  font-family: "macsMinecraft";
+  src: url("/fonts/minecraft-body/macsMinecraft-Regular.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -16,7 +16,7 @@
 
 :root {
   --font-minecraft: "Minercraftory", Arial, sans-serif;
-  --font-minecraft-body: "Minecraftia", Arial, sans-serif;
+  --font-minecraft-body: "macsMinecraft", Arial, sans-serif;
   --radius: 0.625rem;
 
   --background: #ffffff;
@@ -117,22 +117,6 @@ body {
   color: var(--foreground);
   font-family: var(--font-minecraft-body);
   -webkit-font-smoothing: antialiased;
-}
-
-/* Pixel font baseline sits high, so shift text-bearing elements down slightly. */
-button,
-a,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-label,
-time,
-.truncate {
-  transform: translateY(2px);
 }
 
 ::selection {
