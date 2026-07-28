@@ -74,19 +74,19 @@ export function StateLeaderboard({
         ].join(" ")}
       >
         <div className="flex h-full flex-col">
-          <div className="border-b border-zinc-200 p-5 dark:border-zinc-800">
+          <div className="border-b border-border p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
+                <div className="text-[11px] font-black uppercase tracking-[0.14em] text-primary">
                   Estado selecionado
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-minecraft">
-                  <StateFlag uf={selectedUF} className="h-7 w-10 rounded border border-zinc-200 object-cover shadow-sm dark:border-zinc-700" />
+                <div className="font-minecraft mt-1 flex items-center gap-3 text-2xl font-black tracking-tight text-card-foreground">
+                  <StateFlag uf={selectedUF} className="h-7 w-10 rounded border border-border object-cover shadow-sm" />
                   <span className="truncate">{selectedName}</span>
                 </div>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-secondary-foreground">
                   {players.length} jogador{players.length === 1 ? "" : "es"}
-                  <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                  <span className="text-muted-foreground">•</span>
                   RSG 1.16
                 </div>
               </div>
@@ -94,7 +94,7 @@ export function StateLeaderboard({
               <button
                 type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="rounded-lg border border-zinc-200 bg-white p-2 text-xs font-black text-zinc-600 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-emerald-600 dark:hover:text-emerald-400"
+                className="rounded-lg border border-border bg-card p-2 text-xs font-black text-muted-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
                 aria-label="Fechar"
               >
                 ✕
@@ -105,10 +105,10 @@ export function StateLeaderboard({
           <div className="flex-1 overflow-auto p-4 sm:p-5">
             {players.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-                <div className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+                <div className="text-sm font-semibold text-foreground">
                   Sem dados para este estado.
                 </div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-500">
+                <div className="text-xs text-muted-foreground">
                   Clique em outro estado no mapa para ver seu ranking.
                 </div>
               </div>
@@ -134,7 +134,7 @@ export function StateLeaderboard({
         <button
           type="button"
           onClick={() => setSidebarOpen(true)}
-          className="absolute right-4 top-1/2 z-30 -translate-y-1/2 rounded-full border border-zinc-200 bg-white p-3 text-lg font-black text-zinc-700 shadow-lg transition-all hover:scale-105 hover:border-emerald-300 hover:text-emerald-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-500"
+          className="absolute right-4 top-1/2 z-30 -translate-y-1/2 rounded-full border border-border bg-card p-3 text-lg font-black text-foreground shadow-lg shadow-primary/5 transition-all hover:scale-105 hover:border-primary hover:text-primary"
           aria-label="Abrir ranking"
         >
           ◀
@@ -160,7 +160,7 @@ function SidebarPlayerRow({
   const skinUrl = useMemo(() => skinAvatarUrl(name, uuidMap), [name, uuidMap]);
 
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600/50">
+    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition-all hover:border-primary hover:shadow-md">
       <div className="flex min-w-0 items-center gap-4">
         <div
           className={[
@@ -174,16 +174,16 @@ function SidebarPlayerRow({
           <img
             src={skinUrl}
             alt={`${name} head`}
-            className="h-12 w-12 rounded-xl border border-zinc-200 bg-zinc-100 object-cover dark:border-zinc-700 dark:bg-zinc-900"
+            className="h-12 w-12 rounded-xl border border-border bg-secondary object-cover"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
         ) : null}
-        <div className="truncate text-base font-extrabold text-zinc-900 dark:text-zinc-50">{name}</div>
+        <div className="truncate text-base font-extrabold text-card-foreground">{name}</div>
       </div>
 
       <div className="text-right">
-        <div className="text-base font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
+        <div className="text-base font-extrabold tracking-tight text-primary">
           {formatTimeMs(timeMs)}
         </div>
         {link ? (
@@ -191,12 +191,12 @@ function SidebarPlayerRow({
             href={link}
             target="_blank"
             rel="noreferrer"
-            className="text-xs font-semibold uppercase tracking-wider text-zinc-500 underline-offset-2 hover:text-emerald-700 hover:underline dark:text-zinc-400 dark:hover:text-emerald-400"
+            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
           >
             Link
           </a>
         ) : (
-          <div className="text-xs uppercase tracking-wider text-zinc-500">PB</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">PB</div>
         )}
       </div>
     </div>
@@ -215,7 +215,7 @@ function rankColor(rank: number): string {
   if (rank === 1) return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300";
   if (rank === 2) return "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
   if (rank === 3) return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300";
-  return "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300";
+  return "bg-primary/10 text-primary";
 }
 
 function formatTimeMs(ms: number): string {

@@ -48,7 +48,7 @@ export function McRankingsView({
   ];
 
   const selectorIsland = (
-    <div className="space-y-3 rounded-3xl border border-zinc-200/80 bg-white/90 p-3 shadow-lg backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-900/85 sm:p-4">
+    <div className="space-y-3 rounded-3xl border border-border bg-card p-3 shadow-lg shadow-primary/5 sm:p-4">
       <div className="flex flex-wrap gap-2">
         {modeItems.map((item) => (
           <button
@@ -58,8 +58,8 @@ export function McRankingsView({
             className={
               "rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wider transition-all " +
               (mode === item.id
-                ? "border-emerald-500 bg-emerald-600 text-white shadow-sm"
-                : "border-zinc-300 bg-white text-zinc-700 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200")
+                ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                : "border-border bg-secondary text-secondary-foreground hover:border-primary hover:text-primary")
             }
           >
             {item.label}
@@ -72,7 +72,7 @@ export function McRankingsView({
           <select
             value={rsgCategory}
             onChange={(e) => setRsgCategory(e.target.value as RsgCategory)}
-            className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-bold text-zinc-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
           >
             <option value="1.16">RSG 1.16</option>
             <option value="1.16 SSG">SSG 1.16</option>
@@ -94,8 +94,8 @@ export function McRankingsView({
           <StateLeaderboard rows={stateRows} playersByUF={statePlayersByUF} uuidMap={uuidMap} embedded withTopOverlay />
         ) : (
           <div className="mx-auto max-w-6xl px-4 pb-12 pt-24 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-6 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/60 sm:p-8">
-              <h2 className="mb-6 text-center text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm shadow-primary/5 sm:p-8">
+              <h2 className="font-minecraft mb-6 text-center text-2xl font-black tracking-tight text-card-foreground">
                 Ranking por Estados
               </h2>
               <StateLeaderboardList rows={stateRows} />
@@ -104,7 +104,7 @@ export function McRankingsView({
         )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-4 z-40 flex justify-center px-3 sm:bottom-6 sm:justify-end sm:px-6">
-          <div className="pointer-events-auto inline-flex rounded-full border border-zinc-200 bg-white/90 p-1 shadow-lg backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/90">
+          <div className="pointer-events-auto inline-flex rounded-full border border-border bg-card p-1 shadow-lg shadow-primary/5">
             {[
               { id: "map", label: "Mapa" },
               { id: "list", label: "Lista" },
@@ -116,8 +116,8 @@ export function McRankingsView({
                 className={
                   "rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider transition-all sm:px-4 sm:py-2 sm:text-xs " +
                   (stateView === item.id
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800")
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                    : "text-foreground hover:bg-secondary hover:text-primary")
                 }
               >
                 {item.label}

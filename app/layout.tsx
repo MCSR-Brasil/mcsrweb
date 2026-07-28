@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Bebas_Neue, Press_Start_2P } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteShell } from "../components/site-shell";
 
@@ -11,18 +11,6 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
-
-const displayFont = Bebas_Neue({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const minecraftFont = Press_Start_2P({
-  variable: "--font-minecraft",
-  subsets: ["latin"],
-  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -38,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${displayFont.variable} ${minecraftFont.variable} bg-background text-foreground antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
       >
         <SiteShell>{children}</SiteShell>
       </body>

@@ -23,20 +23,20 @@ export function TopNav() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/80">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={handleBack}
-            className="rounded-full border border-zinc-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wider text-zinc-700 transition-colors hover:border-emerald-300 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-500 dark:hover:text-zinc-50"
+            className="rounded-full border border-border bg-card px-3 py-2 text-[11px] font-black uppercase tracking-wider text-foreground transition-colors hover:border-primary hover:text-primary"
             aria-label="Voltar para a página anterior"
           >
             Voltar
           </button>
           <Link
             href="/"
-            className="font-minecraft block truncate text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-50"
+            className="font-minecraft block truncate text-xl font-black tracking-tight text-foreground"
           >
             MCSR BR
           </Link>
@@ -48,8 +48,8 @@ export function TopNav() {
             const cls =
               "rounded-full border px-4 py-2 text-[11px] font-black uppercase tracking-wider transition-all " +
               (active
-                ? "border-emerald-500 bg-emerald-600 text-white shadow-sm"
-                : "border-zinc-300 bg-white text-zinc-700 hover:border-emerald-300 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-500 dark:hover:text-zinc-50");
+                ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                : "border-border bg-card text-foreground hover:border-primary hover:text-primary");
             return (
               <Link key={item.href} href={item.href} className={cls}>
                 {item.label}

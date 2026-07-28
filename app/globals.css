@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Minercraftory";
+  src: url("/fonts/minercraftory/Minercraftory.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Minecraftia";
+  src: url("/fonts/minecraftia/Minecraftia-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-minecraft: "Minercraftory", var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-minecraft-body: "Minecraftia", var(--font-geist-sans), Arial, Helvetica, sans-serif;
   --radius: 0.625rem;
 
   --background: #ffffff;
@@ -31,21 +45,21 @@
   --foreground: #fafafa;
   --card: #171717;
   --card-foreground: #fafafa;
-  --popover: #171717;
+  --popover: #1c1c1c;
   --popover-foreground: #fafafa;
-  --primary: #e5e5e5;
-  --primary-foreground: #171717;
-  --secondary: #262626;
+  --primary: #05df72;
+  --primary-foreground: #0a0a0a;
+  --secondary: #2a2a2a;
   --secondary-foreground: #fafafa;
   --muted: #262626;
-  --muted-foreground: #a1a1a1;
+  --muted-foreground: #d4d4d8;
   --accent: #262626;
   --accent-foreground: #fafafa;
   --destructive: #ff6568;
   --destructive-foreground: #fafafa;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.15);
-  --ring: #737373;
+  --border: rgba(255, 255, 255, 0.18);
+  --input: rgba(255, 255, 255, 0.22);
+  --ring: #05df72;
 }
 
 @theme inline {
@@ -77,14 +91,19 @@
 }
 
 .font-minecraft {
-  font-family: var(--font-minecraft), var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-minecraft);
+  letter-spacing: 0.04em;
+}
+
+.font-minecraft-body {
+  font-family: var(--font-minecraft-body);
   letter-spacing: -0.02em;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-minecraft-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
