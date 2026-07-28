@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
+import { StateFlag } from "./state-flag";
 import { StateMap } from "./state-map";
 
 export function StateLeaderboard({
@@ -38,62 +39,73 @@ export function StateLeaderboard({
 
   return (
     <div
-      className={
-        "relative overflow-hidden border border-zinc-200 bg-white/50 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/30 " +
-        (embedded
-          ? "left-1/2 right-1/2 w-screen -mx-[50vw] rounded-none border-x-0"
-          : "left-1/2 right-1/2 w-screen -mx-[50vw] rounded-2xl")
-      }
-      style={{ height: embedded ? "calc(100dvh - 76px)" : "calc(100dvh - 160px)" }}
+      className={[
+        "relative flex h-[calc(100dvh-76px)] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white/60 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/40",
+        embedded ? "" : "max-h-[720px]",
+      ].join(" ")}
     >
-      <StateMap
-        rows={rows}
-        selectedUF={selectedUF}
-        onSelect={(uf: string, name: string) => {
-          setSelectedUF(uf);
-          setSelectedName(name);
-          setSidebarOpen(true);
-        }}
-        className="h-full w-full rounded-none border-0 bg-transparent shadow-none backdrop-blur-0 dark:bg-transparent"
-      />
-
+      <div className="relative min-w-0 flex-1">
+        <StateMap
+          rows={rows}
+          selectedUF={selectedUF}
+          onSelect={(uf: string, name: string) => {
+            setSelectedUF(uf);
+            setSelectedName(name);
+            setSidebarOpen(true);
+          }}
+          className="h-full w-full rounded-none border-0 bg-transparent shadow-none backdrop-blur-0 dark:bg-transparent"
+        />
+      </div>
 
       <aside
-        className={
-          "absolute right-0 z-20 w-[min(92vw,520px)] border-l border-zinc-200 bg-white/88 shadow-xl backdrop-blur-sm transition-transform dark:border-zinc-800 dark:bg-zinc-950/85 " +
-          (withTopOverlay ? "top-24 h-[calc(100%-6rem)] rounded-tl-2xl" : "top-0 h-full ") +
-          (sidebarOpen ? "translate-x-0" : "translate-x-full")
-        }
+        className={[
+          "z-20 flex flex-col border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-md transition-transform duration-300 ease-out dark:border-zinc-800 dark:bg-zinc-950/95",
+          "absolute inset-y-0 right-0 w-[min(92vw,420px)] border-l lg:static lg:w-[420px] lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "translate-x-full",
+          withTopOverlay
+            ? "top-20 h-[calc(100%-5rem)] rounded-l-2xl lg:top-0 lg:h-full lg:rounded-none"
+            : "h-full",
+        ].join(" ")}
       >
         <div className="flex h-full flex-col">
-          <div className="border-b border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="border-b border-zinc-200 p-5 dark:border-zinc-800">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <div className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
                   Estado selecionado
                 </div>
-                <div className="mt-1 whitespace-normal break-words text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-minecraft">
-                  {selectedName} ({selectedUF})
+                <div className="mt-1 flex items-center gap-3 text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-minecraft">
+                  <StateFlag uf={selectedUF} className="h-7 w-10 rounded border border-zinc-200 object-cover shadow-sm dark:border-zinc-700" />
+                  <span className="truncate">{selectedName}</span>
+                </div>
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                  {players.length} jogador{players.length === 1 ? "" : "es"}
+                  <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                  RSG 1.16
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-black text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                className="rounded-lg border border-zinc-200 bg-white p-2 text-xs font-black text-zinc-600 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-emerald-600 dark:hover:text-emerald-400"
+                aria-label="Fechar"
               >
-                Fechar
+                ✕
               </button>
-            </div>
-
-            <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-              Categoria: RSG 1.16
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto p-4 sm:p-5">
             {players.length === 0 ? (
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">Sem dados para este estado.</div>
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+                <div className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+                  Sem dados para este estado.
+                </div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-500">
+                  Clique em outro estado no mapa para ver seu ranking.
+                </div>
+              </div>
             ) : (
               <div className="space-y-2">
                 {players.map((p, idx) => (
@@ -103,7 +115,6 @@ export function StateLeaderboard({
                     name={p.name}
                     timeMs={p.timeMs}
                     link={p.link ?? null}
-                    format="time_ms"
                   />
                 ))}
               </div>
@@ -111,6 +122,17 @@ export function StateLeaderboard({
           </div>
         </div>
       </aside>
+
+      {!sidebarOpen && (
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="absolute right-4 top-1/2 z-30 -translate-y-1/2 rounded-full border border-zinc-200 bg-white p-3 text-lg font-black text-zinc-700 shadow-lg transition-all hover:scale-105 hover:border-emerald-300 hover:text-emerald-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-500"
+          aria-label="Abrir ranking"
+        >
+          ◀
+        </button>
+      )}
     </div>
   );
 }
@@ -120,18 +142,21 @@ function SidebarPlayerRow({
   name,
   timeMs,
   link,
-  format,
 }: {
   rank: number;
   name: string;
   timeMs: number;
   link: string | null;
-  format: "number" | "time_ms";
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm transition-colors hover:border-emerald-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600/50">
+    <div className="group flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600/50">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="w-9 rounded-md bg-zinc-100 py-1 text-center text-sm font-black tabular-nums text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+        <div
+          className={[
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black tabular-nums",
+            rankColor(rank),
+          ].join(" ")}
+        >
           #{rank}
         </div>
         <div className="truncate text-sm font-extrabold text-zinc-900 dark:text-zinc-50">{name}</div>
@@ -139,14 +164,14 @@ function SidebarPlayerRow({
 
       <div className="text-right">
         <div className="text-sm font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
-          {format === "number" ? Number(timeMs ?? 0).toLocaleString("pt-BR") : formatTimeMs(timeMs)}
+          {formatTimeMs(timeMs)}
         </div>
         {link ? (
           <a
             href={link}
             target="_blank"
             rel="noreferrer"
-            className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-emerald-700 dark:text-zinc-400 dark:hover:text-emerald-400"
+            className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 underline-offset-2 hover:text-emerald-700 hover:underline dark:text-zinc-400 dark:hover:text-emerald-400"
           >
             Link
           </a>
@@ -156,6 +181,13 @@ function SidebarPlayerRow({
       </div>
     </div>
   );
+}
+
+function rankColor(rank: number): string {
+  if (rank === 1) return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300";
+  if (rank === 2) return "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
+  if (rank === 3) return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300";
+  return "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300";
 }
 
 function formatTimeMs(ms: number): string {

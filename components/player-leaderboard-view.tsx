@@ -100,7 +100,11 @@ export function PlayerLeaderboardView({
                   <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                     {valueLabel ? valueLabel + ": " : ""}
                     {formatValue(selected.value, valueFormat)}
-                    {selected.stateUF ? ` • ${selected.stateUF}` : ""}
+                    {selected.stateUF ? (
+                      <span className="ml-1 inline-flex align-middle">
+                        <StateFlag uf={selected.stateUF} />
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <button

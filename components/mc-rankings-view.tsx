@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { PlayerLeaderboardView, type PlayerRow } from "./player-leaderboard-view";
 import { StateLeaderboard } from "./state-leaderboard";
+import { StateLeaderboardList } from "./state-leaderboard-list";
 import type { StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
 import type { UUIDMap } from "../lib/uuids";
 
@@ -30,6 +31,7 @@ export function McRankingsView({
 }) {
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [rsgCategory, setRsgCategory] = useState<RsgCategory>(defaultRsgCategory);
+  const [stateView, setStateView] = useState<"map" | "list">("map");
 
   const currentRows = useMemo(() => {
     if (mode === "ranked") return rankedRows;
@@ -77,6 +79,29 @@ export function McRankingsView({
           </select>
         </div>
       ) : null}
+
+      {mode === "states" ? (
+        <div className="flex gap-2">
+          {[
+            { id: "map", label: "Mapa" },
+            { id: "list", label: "Lista" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setStateView(item.id as "map" | "list")}
+              className={
+                "rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wider transition-all " +
+                (stateView === item.id
+                  ? "border-emerald-500 bg-emerald-600 text-white shadow-sm"
+                  : "border-zinc-300 bg-white text-zinc-700 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200")
+              }
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 
@@ -87,7 +112,18 @@ export function McRankingsView({
           <div className="pointer-events-auto w-full max-w-4xl">{selectorIsland}</div>
         </div>
 
-        <StateLeaderboard rows={stateRows} playersByUF={statePlayersByUF} embedded withTopOverlay />
+        {stateView === "map" ? (
+          <StateLeaderboard rows={stateRows} playersByUF={statePlayersByUF} embedded withTopOverlay />
+        ) : (
+          <div className="mx-auto max-w-6xl px-4 pb-12 pt-24 sm:px-6 lg:px-8">
+            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-6 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/60 sm:p-8">
+              <h2 className="mb-6 text-center text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+                Ranking por Estados
+              </h2>
+              <StateLeaderboardList rows={stateRows} />
+            </div>
+          </div>
+        )}
       </div>
     );
   }

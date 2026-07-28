@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { StateBadge } from "./state-badge";
 
-export function StateFlag({ uf }: { uf: string }) {
+export function StateFlag({ uf, className }: { uf: string; className?: string }) {
   const [failed, setFailed] = useState(false);
   const code = uf.trim().toUpperCase();
   if (!code) return null;
@@ -15,7 +15,10 @@ export function StateFlag({ uf }: { uf: string }) {
       <img
         src={`/states/${code}.png`}
         alt={`${code} flag`}
-        className="h-5 w-7 rounded-sm border border-zinc-200 object-cover shadow-sm dark:border-zinc-700"
+        className={
+          className ??
+          "h-5 w-7 rounded-sm border border-zinc-200 object-cover shadow-sm dark:border-zinc-700"
+        }
         loading="lazy"
         onError={() => setFailed(true)}
       />

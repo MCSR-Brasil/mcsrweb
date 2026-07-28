@@ -63,6 +63,12 @@ function parseEventDateMs(raw: string | null): number {
   return Number.isNaN(ms) ? 0 : ms;
 }
 
+function formatEventDate(raw: string | null): string {
+  const ms = parseEventDateMs(raw);
+  if (!ms) return raw ?? "";
+  return new Date(ms).toLocaleDateString("pt-BR");
+}
+
 function EventsView({ events }: { events: EventRow[] }) {
   const sorted = [...events].sort((a, b) => {
     const ta = parseEventDateMs(a.date);
@@ -98,7 +104,7 @@ function EventsView({ events }: { events: EventRow[] }) {
               </div>
 
               <div className="mt-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                {e.date ?? ""}
+                {formatEventDate(e.date)}
               </div>
 
               {e.info ? <div className="mt-3 text-sm text-zinc-700 dark:text-zinc-200">{e.info}</div> : null}

@@ -1,4 +1,5 @@
 import type { StateLeaderboardRow } from "../lib/repositories/states";
+import { StateFlag } from "./state-flag";
 
 export function StateLeaderboardList({ rows }: { rows: StateLeaderboardRow[] }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
@@ -16,7 +17,7 @@ export function StateLeaderboardList({ rows }: { rows: StateLeaderboardRow[] }) 
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    #{idx + 1} {r.uf}
+                    #{idx + 1} <StateFlag uf={r.uf} />
                   </div>
                   <div className="truncate text-lg font-extrabold text-zinc-900 dark:text-zinc-50">{r.name}</div>
                 </div>

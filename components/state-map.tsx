@@ -80,12 +80,18 @@ export function StateMap({
     polygonSeriesRef.current = polygonSeries;
 
     polygonSeries.mapPolygons.template.setAll({
-      tooltipText: "{name}: {value}",
+      tooltipText: "{name}\n{value} jogador(es)",
       interactive: true,
       fillOpacity: 0.95,
       stroke: am5.color(0xffffff),
       strokeWidth: 1.2,
       strokeOpacity: 0.9,
+    });
+
+    polygonSeries.mapPolygons.template.states.create("hover", {
+      stroke: am5.color(0x10b981),
+      strokeWidth: 2.5,
+      strokeOpacity: 1,
     });
 
     polygonSeries.mapPolygons.template.states.create("active", {
