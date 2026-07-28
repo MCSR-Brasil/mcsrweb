@@ -165,7 +165,7 @@ function colorForValue(value: number, max: number): number {
 
   const palette = [
     { t: 0.0, rgb: [59, 130, 246] }, // blue-500
-    { t: 0.25, rgb: [34, 197, 94] }, // green-500
+    { t: 0.25, rgb: [109, 252, 81] }, // mcsr green
     { t: 0.45, rgb: [250, 204, 21] }, // yellow-400
     { t: 0.65, rgb: [249, 115, 22] }, // orange-500
     { t: 0.85, rgb: [239, 68, 68] }, // red-500

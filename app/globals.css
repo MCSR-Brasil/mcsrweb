@@ -1,22 +1,8 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Minercraftory";
-  src: url("/fonts/minercraftory/Minercraftory.ttf") format("truetype");
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Minecraftia";
-  src: url("/fonts/minecraftia/Minecraftia-Regular.ttf") format("truetype");
-  font-display: swap;
-}
-
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-minecraft: "Minercraftory", var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  --font-minecraft-body: "Minecraftia", var(--font-geist-sans), Arial, Helvetica, sans-serif;
   --radius: 0.625rem;
 
   --background: #ffffff;
@@ -25,8 +11,8 @@
   --card-foreground: #0a0a0a;
   --popover: #ffffff;
   --popover-foreground: #0a0a0a;
-  --primary: #171717;
-  --primary-foreground: #fafafa;
+  --primary: #6dfc51;
+  --primary-foreground: #0a0a0a;
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
   --muted: #f5f5f5;
@@ -37,7 +23,7 @@
   --destructive-foreground: #ffffff;
   --border: #e5e5e5;
   --input: #e5e5e5;
-  --ring: #a1a1a1;
+  --ring: #6dfc51;
 }
 
 .dark {
@@ -47,7 +33,7 @@
   --card-foreground: #fafafa;
   --popover: #1c1c1c;
   --popover-foreground: #fafafa;
-  --primary: #05df72;
+  --primary: #6dfc51;
   --primary-foreground: #0a0a0a;
   --secondary: #2a2a2a;
   --secondary-foreground: #fafafa;
@@ -59,7 +45,7 @@
   --destructive-foreground: #fafafa;
   --border: rgba(255, 255, 255, 0.18);
   --input: rgba(255, 255, 255, 0.22);
-  --ring: #05df72;
+  --ring: #6dfc51;
 }
 
 @theme inline {
@@ -88,6 +74,18 @@
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-emerald-50: #efffed;
+  --color-emerald-100: #dcfedb;
+  --color-emerald-200: #c5feb8;
+  --color-emerald-300: #aefe96;
+  --color-emerald-400: #8dfd74;
+  --color-emerald-500: #6dfc51;
+  --color-emerald-600: #5ce044;
+  --color-emerald-700: #4bc037;
+  --color-emerald-800: #399d2b;
+  --color-emerald-900: #287a20;
+  --color-emerald-950: #195414;
 }
 
 .font-minecraft {
