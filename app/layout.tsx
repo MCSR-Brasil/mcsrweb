@@ -36,9 +36,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${displayFont.variable} ${minecraftFont.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${displayFont.variable} ${minecraftFont.variable} bg-background text-foreground antialiased`}
       >
         <SiteShell>{children}</SiteShell>
       </body>
