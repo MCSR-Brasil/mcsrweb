@@ -2,17 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
+import { normalizeName } from "../lib/normalize";
+import type { UUIDMap } from "../lib/uuids";
 import { StateFlag } from "./state-flag";
 import { StateMap } from "./state-map";
 
 export function StateLeaderboard({
   rows,
   playersByUF,
+  uuidMap,
   embedded = false,
   withTopOverlay = false,
 }: {
   rows: StateLeaderboardRow[];
   playersByUF: StatePlayersByUF;
+  uuidMap?: UUIDMap;
   embedded?: boolean;
   withTopOverlay?: boolean;
 }) {
@@ -60,7 +64,7 @@ export function StateLeaderboard({
       <aside
         className={[
           "z-20 flex flex-col border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-md transition-transform duration-300 ease-out dark:border-zinc-800 dark:bg-zinc-950/95",
-          "absolute inset-y-0 right-0 w-[min(92vw,420px)] border-l lg:static lg:w-[420px] lg:translate-x-0",
+          "absolute inset-y-0 right-0 w-[min(92vw,520px)] border-l lg:static lg:w-[520px] lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "translate-x-full",
           withTopOverlay
             ? "top-20 h-[calc(100%-5rem)] rounded-l-2xl lg:top-0 lg:h-full lg:rounded-none"
@@ -115,6 +119,7 @@ export function StateLeaderboard({
                     name={p.name}
                     timeMs={p.timeMs}
                     link={p.link ?? null}
+                    uuidMap={uuidMap}
                   />
                 ))}
               </div>
@@ -142,28 +147,41 @@ function SidebarPlayerRow({
   name,
   timeMs,
   link,
+  uuidMap,
 }: {
   rank: number;
   name: string;
   timeMs: number;
   link: string | null;
+  uuidMap?: UUIDMap;
 }) {
+  const skinUrl = useMemo(() => skinAvatarUrl(name, uuidMap), [name, uuidMap]);
+
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600/50">
-      <div className="flex min-w-0 items-center gap-3">
+    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600/50">
+      <div className="flex min-w-0 items-center gap-4">
         <div
           className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black tabular-nums",
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black tabular-nums",
             rankColor(rank),
           ].join(" ")}
         >
           #{rank}
         </div>
-        <div className="truncate text-sm font-extrabold text-zinc-900 dark:text-zinc-50">{name}</div>
+        {skinUrl ? (
+          <img
+            src={skinUrl}
+            alt={`${name} head`}
+            className="h-12 w-12 rounded-xl border border-zinc-200 bg-zinc-100 object-cover dark:border-zinc-700 dark:bg-zinc-900"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : null}
+        <div className="truncate text-base font-extrabold text-zinc-900 dark:text-zinc-50">{name}</div>
       </div>
 
       <div className="text-right">
-        <div className="text-sm font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
+        <div className="text-base font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
           {formatTimeMs(timeMs)}
         </div>
         {link ? (
@@ -171,16 +189,24 @@ function SidebarPlayerRow({
             href={link}
             target="_blank"
             rel="noreferrer"
-            className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 underline-offset-2 hover:text-emerald-700 hover:underline dark:text-zinc-400 dark:hover:text-emerald-400"
+            className="text-xs font-semibold uppercase tracking-wider text-zinc-500 underline-offset-2 hover:text-emerald-700 hover:underline dark:text-zinc-400 dark:hover:text-emerald-400"
           >
             Link
           </a>
         ) : (
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500">PB</div>
+          <div className="text-xs uppercase tracking-wider text-zinc-500">PB</div>
         )}
       </div>
     </div>
   );
+}
+
+function skinAvatarUrl(name: string, uuidMap?: UUIDMap): string | null {
+  const rawName = String(name ?? "").trim();
+  if (!rawName) return null;
+  const uuid = uuidMap?.[normalizeName(rawName)];
+  if (uuid) return `https://mc-heads.net/avatar/${encodeURIComponent(uuid)}/64`;
+  return `https://mc-heads.net/avatar/${encodeURIComponent(rawName)}/64`;
 }
 
 function rankColor(rank: number): string {

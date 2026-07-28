@@ -41,6 +41,7 @@ export function StateMap({
   const ref = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<am5.Root | null>(null);
   const polygonSeriesRef = useRef<am5map.MapPolygonSeries | null>(null);
+  const maxValueRef = useRef<number>(1);
   const onSelectRef = useRef<typeof onSelect>(onSelect);
 
   useEffect(() => {
@@ -51,6 +52,8 @@ export function StateMap({
     () => rows.map((r) => ({ id: r.amchartsId, value: r.value, uf: r.uf, name: r.name })),
     [rows]
   );
+
+  const maxValue = useMemo(() => Math.max(1, ...rows.map((r) => r.value)), [rows]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -84,37 +87,25 @@ export function StateMap({
       interactive: true,
       fillOpacity: 0.95,
       stroke: am5.color(0xffffff),
-      strokeWidth: 1.2,
-      strokeOpacity: 0.9,
+      strokeWidth: 2.5,
+      strokeOpacity: 0.95,
     });
 
     polygonSeries.mapPolygons.template.states.create("hover", {
       stroke: am5.color(0x10b981),
-      strokeWidth: 2.5,
+      strokeWidth: 3.5,
       strokeOpacity: 1,
     });
 
     polygonSeries.mapPolygons.template.states.create("active", {
       stroke: am5.color(0xf59e0b),
-      strokeWidth: 2,
+      strokeWidth: 3.5,
       strokeOpacity: 1,
     });
 
-    polygonSeries.set("heatRules", [
-      {
-        target: polygonSeries.mapPolygons.template,
-        dataField: "value",
-        // Blue -> Purple -> Pink-ish style heatmap
-        min: am5.color(0x1d4ed8),
-        max: am5.color(0xf43f5e),
-        key: "fill",
-      },
-    ]);
-
-    polygonSeries.mapPolygons.template.adapters.add("fill", (fill, target) => {
+    polygonSeries.mapPolygons.template.adapters.add("fill", (_fill, target) => {
       const v = Number(getContext(target).value ?? 0);
-      if (!Number.isFinite(v) || v <= 0) return am5.color(0x0f172a);
-      return fill;
+      return am5.color(colorForValue(v, maxValueRef.current));
     });
 
     polygonSeries.mapPolygons.template.adapters.add("fillOpacity", (op, target) => {
@@ -142,7 +133,8 @@ export function StateMap({
 
   useEffect(() => {
     polygonSeriesRef.current?.data.setAll(mapData);
-  }, [mapData]);
+    maxValueRef.current = maxValue;
+  }, [mapData, maxValue]);
 
   useEffect(() => {
     const polygonSeries = polygonSeriesRef.current;
@@ -164,4 +156,16 @@ export function StateMap({
       }
     />
   );
+}
+
+function colorForValue(value: number, max: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 0x0f172a;
+  const safeMax = Math.max(1, max);
+  const t = safeMax === 1 ? 1 : Math.min(1, Math.sqrt((value - 1) / (safeMax - 1)));
+  const start = [253, 224, 71]; // yellow-300
+  const end = [220, 38, 38]; // red-600
+  const r = Math.round(start[0] + (end[0] - start[0]) * t);
+  const g = Math.round(start[1] + (end[1] - start[1]) * t);
+  const b = Math.round(start[2] + (end[2] - start[2]) * t);
+  return (r << 16) | (g << 8) | b;
 }

@@ -80,28 +80,6 @@ export function McRankingsView({
         </div>
       ) : null}
 
-      {mode === "states" ? (
-        <div className="flex gap-2">
-          {[
-            { id: "map", label: "Mapa" },
-            { id: "list", label: "Lista" },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setStateView(item.id as "map" | "list")}
-              className={
-                "rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wider transition-all " +
-                (stateView === item.id
-                  ? "border-emerald-500 bg-emerald-600 text-white shadow-sm"
-                  : "border-zinc-300 bg-white text-zinc-700 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200")
-              }
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 
@@ -113,7 +91,7 @@ export function McRankingsView({
         </div>
 
         {stateView === "map" ? (
-          <StateLeaderboard rows={stateRows} playersByUF={statePlayersByUF} embedded withTopOverlay />
+          <StateLeaderboard rows={stateRows} playersByUF={statePlayersByUF} uuidMap={uuidMap} embedded withTopOverlay />
         ) : (
           <div className="mx-auto max-w-6xl px-4 pb-12 pt-24 sm:px-6 lg:px-8">
             <div className="rounded-2xl border border-zinc-200 bg-white/70 p-6 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/60 sm:p-8">
@@ -124,6 +102,29 @@ export function McRankingsView({
             </div>
           </div>
         )}
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-4 z-40 flex justify-center px-3 sm:bottom-6 sm:justify-end sm:px-6">
+          <div className="pointer-events-auto inline-flex rounded-full border border-zinc-200 bg-white/90 p-1 shadow-lg backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/90">
+            {[
+              { id: "map", label: "Mapa" },
+              { id: "list", label: "Lista" },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setStateView(item.id as "map" | "list")}
+                className={
+                  "rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider transition-all sm:px-4 sm:py-2 sm:text-xs " +
+                  (stateView === item.id
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800")
+                }
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
