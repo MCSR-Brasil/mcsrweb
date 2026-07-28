@@ -4,8 +4,8 @@
   font-family: "Minercraftory";
   src: url("/fonts/minercraftory/Minercraftory.ttf") format("truetype");
   font-display: swap;
-  ascent-override: 85%;
-  descent-override: 15%;
+  ascent-override: 88%;
+  descent-override: 12%;
   line-gap-override: 0%;
 }
 
@@ -13,8 +13,8 @@
   font-family: "Minecraftia";
   src: url("/fonts/minecraftia/Minecraftia-Regular.ttf") format("truetype");
   font-display: swap;
-  ascent-override: 85%;
-  descent-override: 15%;
+  ascent-override: 88%;
+  descent-override: 12%;
   line-gap-override: 0%;
 }
 
