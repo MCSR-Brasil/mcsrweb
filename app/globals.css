@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Minercraftory";
+  src: url("/fonts/minercraftory/Minercraftory.ttf") format("truetype");
+  font-display: swap;
+  ascent-override: 90%;
+  descent-override: 10%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Minecraftia";
+  src: url("/fonts/minecraftia/Minecraftia-Regular.ttf") format("truetype");
+  font-display: swap;
+  ascent-override: 90%;
+  descent-override: 10%;
+  line-gap-override: 0%;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-minecraft: "Minercraftory", Arial, sans-serif;
+  --font-minecraft-body: "Minecraftia", Arial, sans-serif;
   --radius: 0.625rem;
 
   --background: #ffffff;
@@ -98,7 +118,6 @@
   font-family: var(--font-minecraft-body);
   letter-spacing: -0.02em;
   line-height: 1.2;
-  transform: translateY(2px);
 }
 
 body {
