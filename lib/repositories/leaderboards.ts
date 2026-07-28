@@ -110,8 +110,8 @@ async function readRunsCsv(): Promise<RunLeaderboardRow[]> {
   }
 }
 
-async function readRunnersAppsScript(): Promise<RunnerSourceRow[]> {
-  const json = await fetchAppsScriptAction("runners");
+async function readRunnersAppsScript(fresh = false): Promise<RunnerSourceRow[]> {
+  const json = await fetchAppsScriptAction("runners", { fresh });
   const runners = Array.isArray(json?.runners) ? json.runners : [];
   const rows: RunnerSourceRow[] = [];
   for (const item of runners) {
@@ -132,12 +132,15 @@ async function readRunnersAppsScript(): Promise<RunnerSourceRow[]> {
   return rows;
 }
 
-async function readRunsAppsScript(category: string): Promise<RunLeaderboardRow[]> {
+async function readRunsAppsScript(category: string, fresh = false): Promise<RunLeaderboardRow[]> {
   const cat = category.trim().toLowerCase();
   const action = cat === "1.16 ssg" ? "ssg116" : cat === "1.16" ? "rsg116" : "";
   if (!action) return [];
 
-  const [json, runners] = await Promise.all([fetchAppsScriptAction(action), readRunnersAppsScript()]);
+  const [json, runners] = await Promise.all([
+    fetchAppsScriptAction(action, { fresh }),
+    readRunnersAppsScript(fresh),
+  ]);
   const runs = Array.isArray(json?.runs) ? json.runs : [];
   const byName = new Map<string, RunnerSourceRow>();
   for (const r of runners) byName.set(normalizeName(r.name), r);
@@ -182,8 +185,8 @@ async function readRunsAppsScript(category: string): Promise<RunLeaderboardRow[]
   return rows;
 }
 
-async function readRankedAppsScript(): Promise<PlayerLeaderboardRow[]> {
-  const runners = await readRunnersAppsScript();
+async function readRankedAppsScript(fresh = false): Promise<PlayerLeaderboardRow[]> {
+  const runners = await readRunnersAppsScript(fresh);
   const byName = new Map<string, RunnerSourceRow>();
   const byUuid = new Map<string, RunnerSourceRow>();
   for (const r of runners) {
@@ -193,7 +196,10 @@ async function readRankedAppsScript(): Promise<PlayerLeaderboardRow[]> {
   }
 
   try {
-    const res = await fetch(MCSR_RANKED_BR_API, { method: "GET", next: { revalidate: 500 } });
+    const res = await fetch(MCSR_RANKED_BR_API, {
+      method: "GET",
+      ...(fresh ? { cache: "no-store" } : { next: { revalidate: 500 } }),
+    });
     if (res.ok) {
       const json = (await res.json()) as {
         status?: string;
@@ -225,7 +231,7 @@ async function readRankedAppsScript(): Promise<PlayerLeaderboardRow[]> {
     // fallback below
   }
 
-  const json = await fetchAppsScriptAction("ranked");
+  const json = await fetchAppsScriptAction("ranked", { fresh });
   const rankedRaw = Array.isArray(json?.ranked) ? json.ranked : Array.isArray(json?.runs) ? json.runs : [];
   if (!Array.isArray(rankedRaw) || rankedRaw.length === 0) return [];
 
@@ -286,17 +292,17 @@ export async function getRsgLeaderboard(limit = 100): Promise<PlayerLeaderboardR
     .map((r) => ({ name: r.name, value: r.timeMs, stateUF: r.stateUF ?? null }));
 }
 
-export async function getRunsLeaderboard(category: string, limit = 100): Promise<RunLeaderboardRow[]> {
+export async function getRunsLeaderboard(category: string, limit = 100, fresh = false): Promise<RunLeaderboardRow[]> {
   const cat = category.trim().toLowerCase();
-  const backendRows = await readRunsAppsScript(category);
+  const backendRows = await readRunsAppsScript(category, fresh);
   const rows = backendRows.length > 0 ? backendRows : await readRunsCsv();
   const source = rows.length > 0 ? rows : mockRuns;
   const filtered = source.filter((r) => String(r.category ?? "1.16").trim().toLowerCase() === cat);
   return filtered.sort((a, b) => a.timeMs - b.timeMs).slice(0, limit);
 }
 
-export async function getRankedLeaderboard(limit = 100): Promise<PlayerLeaderboardRow[]> {
-  const backendRows = await readRankedAppsScript();
+export async function getRankedLeaderboard(limit = 100, fresh = false): Promise<PlayerLeaderboardRow[]> {
+  const backendRows = await readRankedAppsScript(fresh);
   const rows = backendRows.length > 0 ? backendRows : await readRankedCsv();
   const source = rows.length > 0 ? rows : mockRanked;
   return source.slice().sort((a, b) => b.value - a.value).slice(0, limit);

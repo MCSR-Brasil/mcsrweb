@@ -25,9 +25,17 @@ export function parseTimeToMs(raw: unknown): number | null {
   return minutes * 60_000 + seconds * 1_000 + millis;
 }
 
-async function fetchJson(url: string): Promise<AppsScriptResponse | null> {
+type FetchOptions = { fresh?: boolean };
+
+async function fetchJson(url: string, opts?: FetchOptions): Promise<AppsScriptResponse | null> {
   try {
-    const res = await fetch(url, { method: "GET", next: { revalidate: 500 } });
+    const init: RequestInit = { method: "GET" };
+    if (opts?.fresh) {
+      init.cache = "no-store";
+    } else {
+      init.next = { revalidate: 500 };
+    }
+    const res = await fetch(url, init);
     if (!res.ok) return null;
     const json = (await res.json()) as AppsScriptResponse;
     return json;
@@ -36,7 +44,10 @@ async function fetchJson(url: string): Promise<AppsScriptResponse | null> {
   }
 }
 
-export async function fetchAppsScriptAction(actionName: string): Promise<AppsScriptResponse | null> {
+export async function fetchAppsScriptAction(
+  actionName: string,
+  opts?: FetchOptions
+): Promise<AppsScriptResponse | null> {
   const cfg = getBackendConfig();
   const baseUrl = normalizeText(cfg.appsScript.baseUrl);
   if (!baseUrl) return null;
@@ -45,7 +56,7 @@ export async function fetchAppsScriptAction(actionName: string): Promise<AppsScr
 
   const url = new URL(baseUrl);
   url.searchParams.set("action", action);
-  return fetchJson(url.toString());
+  return fetchJson(url.toString(), opts);
 }
 
 function parseCsvLine(line: string): string[] {
@@ -74,7 +85,12 @@ function parseCsvLine(line: string): string[] {
   return out;
 }
 
-export async function fetchSheetRangeCsv(sheetId: string, range: string, sheetName?: string): Promise<string[][]> {
+export async function fetchSheetRangeCsv(
+  sheetId: string,
+  range: string,
+  sheetName?: string,
+  opts?: FetchOptions
+): Promise<string[][]> {
   const cleanId = normalizeText(sheetId);
   if (!cleanId) return [];
 
@@ -86,7 +102,14 @@ export async function fetchSheetRangeCsv(sheetId: string, range: string, sheetNa
       url.searchParams.set("sheet", normalizeText(sheetName));
     }
 
-    const res = await fetch(url.toString(), { method: "GET", next: { revalidate: 500 } });
+    const init: RequestInit = { method: "GET" };
+    if (opts?.fresh) {
+      init.cache = "no-store";
+    } else {
+      init.next = { revalidate: 500 };
+    }
+
+    const res = await fetch(url.toString(), init);
     if (!res.ok) return [];
     const text = await res.text();
     const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);

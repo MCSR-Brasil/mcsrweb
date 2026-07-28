@@ -249,12 +249,18 @@ function rowsFromUnknown(raw: unknown): string[][] {
   return rows;
 }
 
-async function fetchRowsFromUrl(sourceUrl?: string): Promise<string[][]> {
+async function fetchRowsFromUrl(sourceUrl?: string, fresh = false): Promise<string[][]> {
   const url = String(sourceUrl ?? "").trim();
   if (!url) return [];
 
   try {
-    const res = await fetch(url, { method: "GET", next: { revalidate: 500 } });
+    const init: RequestInit = { method: "GET" };
+    if (fresh) {
+      init.cache = "no-store";
+    } else {
+      init.next = { revalidate: 500 };
+    }
+    const res = await fetch(url, init);
     if (!res.ok) return [];
     const contentType = String(res.headers.get("content-type") ?? "").toLowerCase();
 
@@ -272,10 +278,10 @@ async function fetchRowsFromUrl(sourceUrl?: string): Promise<string[][]> {
   }
 }
 
-async function readDefaultSheetData(sourceUrl?: string): Promise<DefaultTournamentSheetData> {
+async function readDefaultSheetData(sourceUrl?: string, fresh = false): Promise<DefaultTournamentSheetData> {
   if (!sourceUrl) return { title: null, description: null, links: [], results: [] };
 
-  const rows = await fetchRowsFromUrl(sourceUrl);
+  const rows = await fetchRowsFromUrl(sourceUrl, fresh);
   if (rows.length === 0) return { title: null, description: null, links: [], results: [] };
 
   const title = String(rows[0]?.[0] ?? "").trim() || null;
@@ -309,10 +315,14 @@ function parseVerified(raw: string): boolean | null {
   return null;
 }
 
-async function readSsgSheetData(sourceUrl?: string, configuredSeeds: string[] = []): Promise<SsgTournamentSheetData> {
+async function readSsgSheetData(
+  sourceUrl?: string,
+  configuredSeeds: string[] = [],
+  fresh = false
+): Promise<SsgTournamentSheetData> {
   if (!sourceUrl) return { title: null, description: null, links: [], boards: [], scoreboard: [] };
 
-  const rows = await fetchRowsFromUrl(sourceUrl);
+  const rows = await fetchRowsFromUrl(sourceUrl, fresh);
   if (rows.length === 0) return { title: null, description: null, links: [], boards: [], scoreboard: [] };
 
   const title = String(rows[0]?.[0] ?? "").trim() || null;
@@ -454,7 +464,7 @@ export async function getTournamentCards(): Promise<TournamentCard[]> {
   }));
 }
 
-export async function getTournamentPageData(slug: string): Promise<TournamentPageData | null> {
+export async function getTournamentPageData(slug: string, fresh = false): Promise<TournamentPageData | null> {
   const key = String(slug ?? "").trim().toLowerCase();
   if (!key) return null;
 
@@ -464,8 +474,8 @@ export async function getTournamentPageData(slug: string): Promise<TournamentPag
 
   const pageType = sanitizePageType(entry.pageType ?? getTournamentDefaultType());
   const seeds = sanitizeSeeds(entry.seeds);
-  const defaultHdr = pageType === "ssg" ? null : await readDefaultSheetData(entry.url);
-  const ssgHdr = pageType === "ssg" ? await readSsgSheetData(entry.url, seeds) : null;
+  const defaultHdr = pageType === "ssg" ? null : await readDefaultSheetData(entry.url, fresh);
+  const ssgHdr = pageType === "ssg" ? await readSsgSheetData(entry.url, seeds, fresh) : null;
   const firstBoardResults = (ssgHdr?.boards[0]?.results ?? []).map((item: TournamentSsgResult) => ({
     uuid: null,
     name: item.name,

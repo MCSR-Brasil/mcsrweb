@@ -1,4 +1,4 @@
-import { McRankingsView } from "../../../components/mc-rankings-view";
+import { McRankingsPageClient } from "../../../components/mc-rankings-page-client";
 import { getBackendConfig } from "../../../lib/backend-config";
 import { getRankedLeaderboard, getRunsLeaderboard } from "../../../lib/repositories/leaderboards";
 import { getStateLeaderboard, getStatePlayersByUF } from "../../../lib/repositories/states";
@@ -59,18 +59,17 @@ export default async function McRankingsPage({
   }));
 
   return (
-    <div>
-
-      <McRankingsView
-        uuidMap={uuidMap}
-        rankedRows={ranked}
-        rsg116Rows={rsg116Rows}
-        rsgSsgRows={rsgSsgRows}
-        stateRows={stateRows}
-        statePlayersByUF={statePlayersByUF}
-        defaultMode={defaultMode}
-        defaultRsgCategory={defaultRsgCategory}
-      />
-    </div>
+    <McRankingsPageClient
+      initial={{
+        uuidMap,
+        rankedRows: ranked,
+        rsg116Rows,
+        rsgSsgRows,
+        stateRows,
+        statePlayersByUF,
+      }}
+      defaultMode={defaultMode}
+      defaultRsgCategory={defaultRsgCategory}
+    />
   );
 }

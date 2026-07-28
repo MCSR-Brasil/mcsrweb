@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { TournamentPageRenderer } from "../../../components/tournament-page-renderer";
+import { TournamentRefreshClient } from "../../../components/tournament-refresh-client";
 import { getTournamentPageData } from "../../../lib/repositories/tournaments";
 
 type TournamentPageProps = {
@@ -15,5 +15,5 @@ export default async function TournamentDetailPage({ params }: TournamentPagePro
   const data = await getTournamentPageData(slug);
   if (!data) return notFound();
 
-  return <TournamentPageRenderer data={data} />;
+  return <TournamentRefreshClient initial={data} slug={slug} />;
 }

@@ -1,11 +1,11 @@
+import { NextResponse } from "next/server";
 import { getEarningsLeaderboard, readEarnings } from "../../../lib/earnings";
 import { readUUIDMap } from "../../../lib/uuids";
-import { EarningsRefreshClient } from "../../../components/earnings-refresh-client";
 
-export const revalidate = 500;
+export const revalidate = 0;
 
-export default async function EarningsLeaderboardPage() {
-  const [events, uuidMap] = await Promise.all([readEarnings(), readUUIDMap()]);
+export async function GET() {
+  const [events, uuidMap] = await Promise.all([readEarnings(true), readUUIDMap(undefined, true)]);
   const leaders = getEarningsLeaderboard(events);
 
   const leadersTotal = leaders.reduce((sum, l) => sum + l.earnings, 0);
@@ -20,9 +20,12 @@ export default async function EarningsLeaderboardPage() {
     maximumFractionDigits: 0,
   }).format(total);
 
-  return (
-    <EarningsRefreshClient
-      initial={{ events, uuidMap, leaders, totalFormatted }}
-    />
+  return NextResponse.json(
+    { events, uuidMap, leaders, totalFormatted },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    }
   );
 }

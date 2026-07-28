@@ -24,8 +24,8 @@ type BuiltStateData = {
   playersByUF: StatePlayersByUF;
 };
 
-async function buildStateData(maxPlayersPerState = 50): Promise<BuiltStateData> {
-  const runs116 = await getRunsLeaderboard("1.16", 1000);
+async function buildStateData(maxPlayersPerState = 50, fresh = false): Promise<BuiltStateData> {
+  const runs116 = await getRunsLeaderboard("1.16", 1000, fresh);
 
   const byUFUniquePlayers = new Map<string, Set<string>>();
   const byUFPlayers = new Map<string, StatePlayerRow[]>();
@@ -65,21 +65,26 @@ async function buildStateData(maxPlayersPerState = 50): Promise<BuiltStateData> 
   return { leaderboard, playersByUF };
 }
 
-export async function getStateLeaderboard(limit = 27): Promise<StateLeaderboardRow[]> {
-  const built = await buildStateData(50);
+export async function getStateLeaderboard(limit = 27, fresh = false): Promise<StateLeaderboardRow[]> {
+  const built = await buildStateData(50, fresh);
   return built.leaderboard.slice(0, limit);
 }
 
-export async function getStatePlayersByUF(limitPerState = 50): Promise<StatePlayersByUF> {
-  const built = await buildStateData(limitPerState);
+export async function getStatePlayersByUF(limitPerState = 50, fresh = false): Promise<StatePlayersByUF> {
+  const built = await buildStateData(limitPerState, fresh);
   return built.playersByUF;
 }
 
-export async function getStatePlayers(uf: string, limit = 50, category = "Any%" as string): Promise<StatePlayerRow[]> {
+export async function getStatePlayers(
+  uf: string,
+  limit = 50,
+  category = "Any%" as string,
+  fresh = false
+): Promise<StatePlayerRow[]> {
   const stateUF = uf.trim().toUpperCase();
   if (!stateUF) return [];
   void category;
 
-  const playersByUF = await getStatePlayersByUF(limit);
+  const playersByUF = await getStatePlayersByUF(limit, fresh);
   return playersByUF[stateUF] ?? [];
 }

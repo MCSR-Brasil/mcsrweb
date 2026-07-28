@@ -41,8 +41,8 @@ function parseTournament(raw: unknown): EventRow | null {
   };
 }
 
-export async function readEarnings(): Promise<EventRow[]> {
-  const json = await fetchAppsScriptAction("earnings");
+export async function readEarnings(fresh = false): Promise<EventRow[]> {
+  const json = await fetchAppsScriptAction("earnings", { fresh });
   const tournaments = Array.isArray(json?.tournaments) ? json.tournaments : [];
   return tournaments.flatMap((tournament) => {
     const parsed = parseTournament(tournament);
