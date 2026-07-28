@@ -179,11 +179,11 @@ function SidebarPlayerRow({
             referrerPolicy="no-referrer"
           />
         ) : null}
-        <div className="truncate text-base font-extrabold leading-none text-card-foreground">{name}</div>
+        <div className="truncate text-base font-extrabold text-card-foreground">{name}</div>
       </div>
 
       <div className="text-right">
-        <div className="text-base font-extrabold leading-none tracking-tight text-primary">
+        <div className="text-base font-extrabold tracking-tight text-primary">
           {formatTimeMs(timeMs)}
         </div>
         {link ? (

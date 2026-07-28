@@ -56,7 +56,7 @@ export function McRankingsView({
             type="button"
             onClick={() => setMode(item.id)}
             className={
-              "inline-flex items-center justify-center rounded-full border px-4 py-2 text-xs font-black uppercase leading-none tracking-wider transition-all " +
+              "inline-flex items-center justify-center rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wider transition-all " +
               (mode === item.id
                 ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                 : "border-border bg-secondary text-secondary-foreground hover:border-primary hover:text-primary")
@@ -114,7 +114,7 @@ export function McRankingsView({
                 type="button"
                 onClick={() => setStateView(item.id as "map" | "list")}
                 className={
-                  "inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase leading-none tracking-wider transition-all sm:px-4 sm:py-2 sm:text-xs " +
+                  "inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider transition-all sm:px-4 sm:py-2 sm:text-xs " +
                   (stateView === item.id
                     ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                     : "text-foreground hover:bg-secondary hover:text-primary")

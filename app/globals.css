@@ -4,18 +4,12 @@
   font-family: "Minercraftory";
   src: url("/fonts/minercraftory/Minercraftory.ttf") format("truetype");
   font-display: swap;
-  ascent-override: 88%;
-  descent-override: 12%;
-  line-gap-override: 0%;
 }
 
 @font-face {
   font-family: "Minecraftia";
   src: url("/fonts/minecraftia/Minecraftia-Regular.ttf") format("truetype");
   font-display: swap;
-  ascent-override: 88%;
-  descent-override: 12%;
-  line-gap-override: 0%;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -111,21 +105,34 @@
 .font-minecraft {
   font-family: var(--font-minecraft);
   letter-spacing: 0.04em;
-  line-height: 1.15;
 }
 
 .font-minecraft-body {
   font-family: var(--font-minecraft-body);
   letter-spacing: -0.02em;
-  line-height: 1.2;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-minecraft-body);
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Pixel font baseline sits high, so shift text-bearing elements down slightly. */
+button,
+a,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+label,
+time,
+.truncate {
+  transform: translateY(2px);
 }
 
 ::selection {

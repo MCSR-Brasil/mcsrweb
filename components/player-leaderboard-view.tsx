@@ -281,7 +281,7 @@ function PlayerCard({
         <div className="flex min-w-0 flex-1 items-center justify-between gap-3 p-3 md:p-5">
           <div className="min-w-0">
             <div className="mb-1 flex flex-wrap items-center gap-2">
-              <h3 className="truncate text-xl font-extrabold leading-none text-zinc-900 dark:text-zinc-50 md:text-2xl">
+              <h3 className="truncate text-xl font-extrabold text-zinc-900 dark:text-zinc-50 md:text-2xl">
                 {player.name}
               </h3>
               {player.stateUF ? <StateFlag uf={player.stateUF} /> : null}
