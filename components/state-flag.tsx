@@ -13,7 +13,7 @@ export function StateFlag({ uf, className }: { uf: string; className?: string })
   return (
     <span className="inline-flex items-center">
       <img
-        src={`/states/${code}.png`}
+        src={`/states/${code.toLowerCase()}.png`}
         alt={`${code} flag`}
         className={
           className ??
