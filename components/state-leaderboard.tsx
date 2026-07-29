@@ -31,7 +31,30 @@ export function StateLeaderboard({
   const [selectedName, setSelectedName] = useState<string>(defaultSelected?.name ?? "São Paulo");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const players = useMemo(() => playersByUF[selectedUF] ?? [], [playersByUF, selectedUF]);
+  const players = useMemo(() => {
+    const all = playersByUF[selectedUF] ?? [];
+    const filtered: StatePlayerRow[] = [];
+    for (const p of all) {
+      if (stateCategory === "rsg" && p.rsgTimeMs != null) {
+        filtered.push({
+          ...p,
+          timeMs: p.rsgTimeMs,
+          link: p.rsgLink,
+          achievedAt: p.rsgAchievedAt,
+          category: "1.16",
+        });
+      } else if (stateCategory === "ssg" && p.ssgTimeMs != null) {
+        filtered.push({
+          ...p,
+          timeMs: p.ssgTimeMs,
+          link: p.ssgLink,
+          achievedAt: p.ssgAchievedAt,
+          category: "1.16 SSG",
+        });
+      }
+    }
+    return filtered.sort((a, b) => a.timeMs - b.timeMs);
+  }, [playersByUF, selectedUF, stateCategory]);
 
   useEffect(() => {
     if (!embedded) return;
@@ -144,8 +167,9 @@ export function StateLeaderboard({
                   <SidebarPlayerRow
                     key={`${p.name}-${idx}`}
                     rank={idx + 1}
-                    player={p}
-                    category={stateCategory}
+                    name={p.name}
+                    timeMs={p.timeMs}
+                    link={p.link ?? null}
                     uuidMap={uuidMap}
                   />
                 ))}
@@ -171,25 +195,17 @@ export function StateLeaderboard({
 
 function SidebarPlayerRow({
   rank,
-  player,
-  category,
+  name,
+  timeMs,
+  link,
   uuidMap,
 }: {
   rank: number;
-  player: StatePlayerRow;
-  category: StateCategory;
+  name: string;
+  timeMs: number;
+  link: string | null;
   uuidMap?: UUIDMap;
 }) {
-  const name = player.name;
-  const rsg = { timeMs: player.rsgTimeMs, link: player.rsgLink, achievedAt: player.rsgAchievedAt };
-  const ssg = { timeMs: player.ssgTimeMs, link: player.ssgLink, achievedAt: player.ssgAchievedAt };
-  const selected = category === "rsg" ? rsg : ssg;
-  const fallback = category === "rsg" ? ssg : rsg;
-  const timeMs = selected.timeMs ?? fallback.timeMs ?? player.timeMs;
-  const link = selected.link ?? fallback.link ?? player.link ?? null;
-  const achievedAt = selected.achievedAt ?? fallback.achievedAt ?? player.achievedAt ?? null;
-  const isFallback = selected.timeMs == null && fallback.timeMs != null;
-
   const skinUrl = useMemo(() => skinAvatarUrl(name, uuidMap), [name, uuidMap]);
 
   return (
