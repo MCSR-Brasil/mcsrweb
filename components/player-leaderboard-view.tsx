@@ -97,37 +97,31 @@ export function PlayerLeaderboardView({
           />
 
           <div
-            className="relative z-10 flex w-full max-w-5xl max-h-[90dvh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+            className="relative z-10 flex w-full max-w-7xl max-h-[92dvh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+            <div className="flex items-center gap-4 border-b border-border px-6 py-5">
               <div
                 className={[
-                  "bg-gradient-to-br flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black tabular-nums text-white shadow-sm",
+                  "bg-gradient-to-br flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black tabular-nums text-white shadow-sm",
                   rankColor(selectedRank - 1),
                 ].join(" ")}
+                style={{ WebkitTextStroke: "1px black" }}
               >
                 #{selectedRank}
               </div>
               <img
                 src={getPlayerBustUrl(selected, uuidMap)}
                 alt={`${selected.name} head`}
-                className="h-12 w-12 rounded-lg border border-border bg-secondary object-cover"
+                className="h-14 w-14 rounded-lg border border-border bg-secondary object-cover"
                 loading="lazy"
                 referrerPolicy="no-referrer"
               />
               <div className="min-w-0 flex-1">
-                <h3 className="font-minecraft truncate text-xl font-black text-card-foreground">
+                <h3 className="font-minecraft truncate text-2xl font-normal leading-tight text-card-foreground md:text-3xl">
                   {selected.name}
                 </h3>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                  {valueLabel ? valueLabel + ": " : ""}
-                  {formatValue(selected.value, valueFormat)}
-                  {selected.stateUF ? (
-                    <StateFlag uf={selected.stateUF} className="h-4 w-6 rounded" />
-                  ) : null}
-                </div>
               </div>
               <button
                 type="button"
@@ -143,8 +137,8 @@ export function PlayerLeaderboardView({
               </button>
             </div>
 
-            <div className="grid flex-1 grid-cols-1 overflow-y-auto md:grid-cols-2">
-              <div className="aspect-video bg-black md:aspect-auto md:min-h-[280px]">
+            <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-2">
+              <div className="flex aspect-video w-full items-center justify-center bg-black">
                 {selectedEmbed ? (
                   <iframe
                     src={selectedEmbed}
@@ -299,10 +293,10 @@ function PlayerCard({
           </div>
           <div className="pointer-events-none absolute inset-y-0 left-2 flex items-start pt-1" aria-hidden="true">
             <div
-              className="text-3xl leading-none text-white sm:text-4xl md:text-5xl"
+              className="text-4xl leading-none text-white sm:text-5xl md:text-6xl"
               style={{
                 fontFamily: "var(--font-display)",
-                WebkitTextStroke: "3px black",
+                WebkitTextStroke: "1px black",
               }}
             >
               #{rank}
