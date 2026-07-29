@@ -1,7 +1,7 @@
 "use client";
 
 import { useBackgroundRefresh } from "../hooks/use-background-refresh";
-import type { StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
+import type { RankedStatePlayersByUF, StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
 import type { UUIDMap } from "../lib/uuids";
 import { McRankingsView } from "./mc-rankings-view";
 import type { PlayerRow } from "./player-leaderboard-view";
@@ -12,6 +12,7 @@ type McData = {
   rsgSsgRows: PlayerRow[];
   stateRows: StateLeaderboardRow[];
   statePlayersByUF: StatePlayersByUF;
+  rankedStatePlayersByUF: RankedStatePlayersByUF;
   uuidMap: UUIDMap;
 };
 
@@ -36,6 +37,7 @@ export function McRankingsPageClient({
       rsgSsgRows={data.rsgSsgRows}
       stateRows={data.stateRows}
       statePlayersByUF={data.statePlayersByUF}
+      rankedStatePlayersByUF={data.rankedStatePlayersByUF}
       defaultMode={defaultMode}
       defaultRsgCategory={defaultRsgCategory}
     />

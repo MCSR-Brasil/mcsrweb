@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 import { PlayerLeaderboardView, type PlayerRow } from "./player-leaderboard-view";
 import { StateLeaderboard } from "./state-leaderboard";
 import { StateLeaderboardList } from "./state-leaderboard-list";
-import type { StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
+import type { RankedStatePlayersByUF, StateLeaderboardRow, StatePlayersByUF } from "../lib/repositories/states";
 import type { UUIDMap } from "../lib/uuids";
 
 type Mode = "rsg" | "ranked" | "states";
 type RsgCategory = "1.16" | "1.16 SSG";
-type StateCategory = "rsg" | "ssg";
+type StateCategory = "rsg" | "ssg" | "ranked";
 
 export function McRankingsView({
   uuidMap,
@@ -18,6 +18,7 @@ export function McRankingsView({
   rsgSsgRows,
   stateRows,
   statePlayersByUF,
+  rankedStatePlayersByUF,
   defaultMode,
   defaultRsgCategory,
 }: {
@@ -27,6 +28,7 @@ export function McRankingsView({
   rsgSsgRows: PlayerRow[];
   stateRows: StateLeaderboardRow[];
   statePlayersByUF: StatePlayersByUF;
+  rankedStatePlayersByUF: RankedStatePlayersByUF;
   defaultMode: Mode;
   defaultRsgCategory: RsgCategory;
 }) {
@@ -96,6 +98,7 @@ export function McRankingsView({
           <StateLeaderboard
             rows={stateRows}
             playersByUF={statePlayersByUF}
+            rankedPlayersByUF={rankedStatePlayersByUF}
             stateCategory={stateCategory}
             onStateCategoryChange={setStateCategory}
             uuidMap={uuidMap}

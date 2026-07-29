@@ -1,5 +1,6 @@
 import { BRAZIL_STATES } from "../states";
-import { getRunsLeaderboard } from "./leaderboards";
+import { getRankedLeaderboard, getRunsLeaderboard, readRunnersAppsScript } from "./leaderboards";
+import { normalizeName } from "../normalize";
 
 export type StateLeaderboardRow = {
   uf: string;
@@ -215,4 +216,102 @@ export async function getCombinedStatePlayersByUF(
 ): Promise<StatePlayersByUF> {
   const built = await buildCombinedStateData(limitPerState, fresh);
   return built.playersByUF;
+}
+
+export type RankedStatePlayerRow = {
+  name: string;
+  stateUF: string;
+  uuid: string | null;
+  elo: number | null;
+};
+
+export type RankedStatePlayersByUF = Record<string, RankedStatePlayerRow[]>;
+
+type BuiltRankedStateData = {
+  leaderboard: StateLeaderboardRow[];
+  playersByUF: RankedStatePlayersByUF;
+};
+
+async function buildRankedStateData(
+  maxPlayersPerState = 50,
+  fresh = false
+): Promise<BuiltRankedStateData> {
+  const [runners, ranked] = await Promise.all([
+    readRunnersAppsScript(fresh),
+    getRankedLeaderboard(150, fresh),
+  ]);
+
+  const eloByUuid = new Map<string, number>();
+  const eloByName = new Map<string, number>();
+  for (const r of ranked) {
+    const uuid = String(r.uuid ?? "").trim().toLowerCase();
+    if (uuid) eloByUuid.set(uuid, r.value);
+    eloByName.set(normalizeName(r.name), r.value);
+  }
+
+  const byUFUniquePlayers = new Map<string, Set<string>>();
+  const byUFPlayers = new Map<string, RankedStatePlayerRow[]>();
+
+  for (const runner of runners) {
+    if (!runner.ranked) continue;
+    const uf = String(runner.stateUF ?? "").trim().toUpperCase();
+    const name = String(runner.name ?? "").trim();
+    if (!uf || !name) continue;
+
+    if (!byUFUniquePlayers.has(uf)) byUFUniquePlayers.set(uf, new Set());
+    byUFUniquePlayers.get(uf)?.add(name.toLowerCase());
+
+    const uuid = String(runner.uuid ?? "").trim().toLowerCase();
+    const elo = (uuid ? eloByUuid.get(uuid) : undefined) ?? eloByName.get(normalizeName(name)) ?? null;
+
+    if (!byUFPlayers.has(uf)) byUFPlayers.set(uf, []);
+    byUFPlayers.get(uf)?.push({ name, stateUF: uf, uuid: runner.uuid ?? null, elo });
+  }
+
+  const leaderboard = BRAZIL_STATES.map((s) => ({
+    uf: s.uf,
+    name: s.name,
+    value: byUFUniquePlayers.get(s.uf)?.size ?? 0,
+    amchartsId: s.amchartsId,
+  })).sort((a, b) => b.value - a.value);
+
+  const playersByUF: RankedStatePlayersByUF = {};
+  for (const s of BRAZIL_STATES) {
+    const rows = byUFPlayers.get(s.uf) ?? [];
+    playersByUF[s.uf] = rows
+      .sort((a, b) => {
+        if (a.elo != null && b.elo != null) return b.elo - a.elo;
+        if (a.elo != null) return -1;
+        if (b.elo != null) return 1;
+        return a.name.localeCompare(b.name, "pt-BR");
+      })
+      .slice(0, maxPlayersPerState);
+  }
+
+  return { leaderboard, playersByUF };
+}
+
+export async function getRankedStateLeaderboard(limit = 27, fresh = false): Promise<StateLeaderboardRow[]> {
+  const built = await buildRankedStateData(limit, fresh);
+  return built.leaderboard.slice(0, limit);
+}
+
+export async function getRankedStatePlayersByUF(
+  limitPerState = 50,
+  fresh = false
+): Promise<RankedStatePlayersByUF> {
+  const built = await buildRankedStateData(limitPerState, fresh);
+  return built.playersByUF;
+}
+
+export async function getRankedStatePlayers(
+  uf: string,
+  limit = 50,
+  fresh = false
+): Promise<RankedStatePlayerRow[]> {
+  const stateUF = uf.trim().toUpperCase();
+  if (!stateUF) return [];
+
+  const playersByUF = await getRankedStatePlayersByUF(limit, fresh);
+  return playersByUF[stateUF] ?? [];
 }

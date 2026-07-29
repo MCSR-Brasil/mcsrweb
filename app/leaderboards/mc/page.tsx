@@ -1,7 +1,11 @@
 import { McRankingsPageClient } from "../../../components/mc-rankings-page-client";
 import { getBackendConfig } from "../../../lib/backend-config";
 import { getRankedLeaderboard, getRunsLeaderboard } from "../../../lib/repositories/leaderboards";
-import { getCombinedStateLeaderboard, getCombinedStatePlayersByUF } from "../../../lib/repositories/states";
+import {
+  getCombinedStateLeaderboard,
+  getCombinedStatePlayersByUF,
+  getRankedStatePlayersByUF,
+} from "../../../lib/repositories/states";
 import { readUUIDMap } from "../../../lib/uuids";
 
 export const revalidate = 500;
@@ -27,12 +31,13 @@ export default async function McRankingsPage({
           : configDefaultMode;
   const defaultRsgCategory = params.category === "1.16 SSG" ? "1.16 SSG" : configDefaultCategory;
 
-  const [rsg116, rsgSsg, ranked, stateRows, statePlayersByUF, uuidMap] = await Promise.all([
+  const [rsg116, rsgSsg, ranked, stateRows, statePlayersByUF, rankedStatePlayersByUF, uuidMap] = await Promise.all([
     getRunsLeaderboard("1.16", 100),
     getRunsLeaderboard("1.16 SSG", 100),
     getRankedLeaderboard(100),
     getCombinedStateLeaderboard(),
     getCombinedStatePlayersByUF(50),
+    getRankedStatePlayersByUF(50),
     readUUIDMap(),
   ]);
 
@@ -67,6 +72,7 @@ export default async function McRankingsPage({
         rsgSsgRows,
         stateRows,
         statePlayersByUF,
+        rankedStatePlayersByUF,
       }}
       defaultMode={defaultMode}
       defaultRsgCategory={defaultRsgCategory}

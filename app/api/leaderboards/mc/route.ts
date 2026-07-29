@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import { getRankedLeaderboard, getRunsLeaderboard } from "../../../../lib/repositories/leaderboards";
-import { getCombinedStateLeaderboard, getCombinedStatePlayersByUF } from "../../../../lib/repositories/states";
+import {
+  getCombinedStateLeaderboard,
+  getCombinedStatePlayersByUF,
+  getRankedStatePlayersByUF,
+} from "../../../../lib/repositories/states";
 import { readUUIDMap } from "../../../../lib/uuids";
 
 export const revalidate = 0;
 
 export async function GET() {
-  const [rsg116, rsgSsg, ranked, stateRows, statePlayersByUF, uuidMap] = await Promise.all([
+  const [rsg116, rsgSsg, ranked, stateRows, statePlayersByUF, rankedStatePlayersByUF, uuidMap] = await Promise.all([
     getRunsLeaderboard("1.16", 100, true),
     getRunsLeaderboard("1.16 SSG", 100, true),
     getRankedLeaderboard(100, true),
     getCombinedStateLeaderboard(),
     getCombinedStatePlayersByUF(50),
+    getRankedStatePlayersByUF(50, true),
     readUUIDMap(undefined, true),
   ]);
 
@@ -44,6 +49,7 @@ export async function GET() {
       rankedRows: ranked,
       stateRows,
       statePlayersByUF,
+      rankedStatePlayersByUF,
       uuidMap,
     },
     {

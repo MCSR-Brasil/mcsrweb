@@ -39,10 +39,11 @@ const mockRanked: PlayerLeaderboardRow[] = [
   { name: "fortress", value: 1501, stateUF: "BA" },
 ];
 
-type RunnerSourceRow = {
+export type RunnerSourceRow = {
   name: string;
   stateUF: string | null;
   uuid: string | null;
+  ranked: boolean;
 };
 
 const MCSR_RANKED_BR_API = "https://mcsrranked.com/api/leaderboard?country=BR";
@@ -110,24 +111,22 @@ async function readRunsCsv(): Promise<RunLeaderboardRow[]> {
   }
 }
 
-async function readRunnersAppsScript(fresh = false): Promise<RunnerSourceRow[]> {
+export async function readRunnersAppsScript(fresh = false): Promise<RunnerSourceRow[]> {
   const json = await fetchAppsScriptAction("runners", { fresh });
   const runners = Array.isArray(json?.runners) ? json.runners : [];
   const rows: RunnerSourceRow[] = [];
   for (const item of runners) {
     if (!Array.isArray(item)) continue;
     const c0 = String(item[0] ?? "").trim();
-    const c1 = String(item[1] ?? "").trim();
-    const c2 = String(item[2] ?? "").trim();
-    const c3 = String(item[3] ?? "").trim();
-    const c4 = String(item[4] ?? "").trim();
-
     const isTimestampFirst = /^\d{10,}$/.test(c0);
-    const name = isTimestampFirst ? c1 : c0;
-    const stateUF = normalizeStateUF(isTimestampFirst ? c2 : c1);
-    const uuid = (isTimestampFirst ? c4 : c3) || null;
+    const cols = isTimestampFirst ? item.slice(1) : item;
+
+    const name = String(cols[0] ?? "").trim();
+    const stateUF = normalizeStateUF(String(cols[1] ?? ""));
+    const uuid = String(cols[2] ?? "").trim() || null;
+    const ranked = String(cols[3] ?? "").trim().toLowerCase() === "true";
     if (!name) continue;
-    rows.push({ name, stateUF, uuid });
+    rows.push({ name, stateUF, uuid, ranked });
   }
   return rows;
 }

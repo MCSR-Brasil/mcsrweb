@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { StateLeaderboardRow, StatePlayerRow, StatePlayersByUF } from "../lib/repositories/states";
+import type {
+  RankedStatePlayerRow,
+  RankedStatePlayersByUF,
+  StateLeaderboardRow,
+  StatePlayerRow,
+  StatePlayersByUF,
+} from "../lib/repositories/states";
 import { normalizeName } from "../lib/normalize";
 import type { UUIDMap } from "../lib/uuids";
 import { StateFlag } from "./state-flag";
 import { StateMap } from "./state-map";
 
-type StateCategory = "rsg" | "ssg";
+type StateCategory = "rsg" | "ssg" | "ranked";
 
 export function StateLeaderboard({
   rows,
   playersByUF,
+  rankedPlayersByUF,
   uuidMap,
   stateCategory = "rsg",
   onStateCategoryChange,
@@ -20,6 +27,7 @@ export function StateLeaderboard({
 }: {
   rows: StateLeaderboardRow[];
   playersByUF: StatePlayersByUF;
+  rankedPlayersByUF?: RankedStatePlayersByUF;
   uuidMap?: UUIDMap;
   stateCategory?: StateCategory;
   onStateCategoryChange?: (category: StateCategory) => void;
@@ -55,6 +63,13 @@ export function StateLeaderboard({
     }
     return filtered.sort((a, b) => a.timeMs - b.timeMs);
   }, [playersByUF, selectedUF, stateCategory]);
+
+  const rankedPlayers = useMemo<RankedStatePlayerRow[]>(() => {
+    return rankedPlayersByUF?.[selectedUF] ?? [];
+  }, [rankedPlayersByUF, selectedUF]);
+
+  const isRanked = stateCategory === "ranked";
+  const playerCount = isRanked ? rankedPlayers.length : players.length;
 
   useEffect(() => {
     if (!embedded) return;
@@ -114,13 +129,14 @@ export function StateLeaderboard({
                   <span className="truncate">{selectedName}</span>
                 </div>
                 <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {players.length} jogador{players.length === 1 ? "" : "es"}
+                  {playerCount} jogador{playerCount === 1 ? "" : "es"}
                 </div>
                 {onStateCategoryChange ? (
                   <div className="mt-2 inline-flex rounded-xl border border-border bg-secondary p-1">
                     {[
                       { id: "rsg" as const, label: "RSG 1.16" },
                       { id: "ssg" as const, label: "SSG 1.16" },
+                      { id: "ranked" as const, label: "Ranked" },
                     ].map((item) => (
                       <button
                         key={item.id}
@@ -152,7 +168,7 @@ export function StateLeaderboard({
           </div>
 
           <div className="flex-1 overflow-auto p-4 sm:p-5">
-            {players.length === 0 ? (
+            {playerCount === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
                 <div className="text-sm font-semibold text-foreground">
                   Sem dados para este estado.
@@ -160,6 +176,24 @@ export function StateLeaderboard({
                 <div className="text-xs text-muted-foreground">
                   Clique em outro estado no mapa para ver seu ranking.
                 </div>
+              </div>
+            ) : isRanked ? (
+              <div className="space-y-2">
+                {(() => {
+                  let eloRank = 0;
+                  return rankedPlayers.map((p, idx) => {
+                    if (p.elo != null) eloRank += 1;
+                    return (
+                      <RankedSidebarPlayerRow
+                        key={`${p.name}-${idx}`}
+                        rank={p.elo != null ? eloRank : null}
+                        name={p.name}
+                        elo={p.elo}
+                        uuidMap={uuidMap}
+                      />
+                    );
+                  });
+                })()}
               </div>
             ) : (
               <div className="space-y-2">
@@ -246,6 +280,56 @@ function SidebarPlayerRow({
           </a>
         ) : (
           <div className="text-xs uppercase tracking-wider text-muted-foreground">PB</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RankedSidebarPlayerRow({
+  rank,
+  name,
+  elo,
+  uuidMap,
+}: {
+  rank: number | null;
+  name: string;
+  elo: number | null;
+  uuidMap?: UUIDMap;
+}) {
+  const skinUrl = useMemo(() => skinAvatarUrl(name, uuidMap), [name, uuidMap]);
+
+  return (
+    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition-all hover:border-primary hover:shadow-md">
+      <div className="flex min-w-0 items-center gap-4">
+        <div
+          className={[
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black tabular-nums",
+            rank != null ? rankColor(rank) : "bg-secondary text-muted-foreground",
+          ].join(" ")}
+        >
+          {rank != null ? `#${rank}` : "—"}
+        </div>
+        {skinUrl ? (
+          <img
+            src={skinUrl}
+            alt={`${name} head`}
+            className="h-12 w-12 rounded-xl border border-border bg-secondary object-cover"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : null}
+        <div className="truncate text-base font-extrabold text-card-foreground">{name}</div>
+      </div>
+
+      <div className="text-right">
+        {elo != null ? (
+          <>
+            <div className="text-base font-extrabold tracking-tight text-primary">{elo}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Elo</div>
+          </>
+        ) : (
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sem elo</div>
         )}
       </div>
     </div>
