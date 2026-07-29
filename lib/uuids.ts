@@ -11,8 +11,12 @@ async function readUUIDMapFromAppsScript(fresh = false): Promise<UUIDMap> {
   const runners = Array.isArray(json?.runners) ? json.runners : [];
   for (const item of runners) {
     if (!Array.isArray(item)) continue;
-    const name = normalizeName(String(item[0] ?? ""));
-    const uuid = String(item[3] ?? "").trim();
+    const c0 = String(item[0] ?? "").trim();
+    const isTimestampFirst = /^\d{10,}$/.test(c0);
+    const cols = isTimestampFirst ? item.slice(1) : item;
+
+    const name = normalizeName(String(cols[0] ?? ""));
+    const uuid = String(cols[2] ?? "").trim();
     if (!name || !uuid) continue;
     map[name] = uuid;
   }

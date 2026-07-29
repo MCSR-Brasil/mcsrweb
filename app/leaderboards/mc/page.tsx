@@ -4,6 +4,7 @@ import { getRankedLeaderboard, getRunsLeaderboard } from "../../../lib/repositor
 import {
   getCombinedStateLeaderboard,
   getCombinedStatePlayersByUF,
+  getRankedStateLeaderboard,
   getRankedStatePlayersByUF,
 } from "../../../lib/repositories/states";
 import { readUUIDMap } from "../../../lib/uuids";
@@ -31,15 +32,17 @@ export default async function McRankingsPage({
           : configDefaultMode;
   const defaultRsgCategory = params.category === "1.16 SSG" ? "1.16 SSG" : configDefaultCategory;
 
-  const [rsg116, rsgSsg, ranked, stateRows, statePlayersByUF, rankedStatePlayersByUF, uuidMap] = await Promise.all([
-    getRunsLeaderboard("1.16", 100),
-    getRunsLeaderboard("1.16 SSG", 100),
-    getRankedLeaderboard(100),
-    getCombinedStateLeaderboard(),
-    getCombinedStatePlayersByUF(50),
-    getRankedStatePlayersByUF(50),
-    readUUIDMap(),
-  ]);
+  const [rsg116, rsgSsg, ranked, stateRows, rankedStateRows, statePlayersByUF, rankedStatePlayersByUF, uuidMap] =
+    await Promise.all([
+      getRunsLeaderboard("1.16", 100),
+      getRunsLeaderboard("1.16 SSG", 100),
+      getRankedLeaderboard(100),
+      getCombinedStateLeaderboard(),
+      getRankedStateLeaderboard(),
+      getCombinedStatePlayersByUF(50),
+      getRankedStatePlayersByUF(50),
+      readUUIDMap(),
+    ]);
 
   const rsg116Rows = rsg116.map((r) => ({
     name: r.name,
@@ -71,6 +74,7 @@ export default async function McRankingsPage({
         rsg116Rows,
         rsgSsgRows,
         stateRows,
+        rankedStateRows,
         statePlayersByUF,
         rankedStatePlayersByUF,
       }}

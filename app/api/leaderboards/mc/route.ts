@@ -3,6 +3,7 @@ import { getRankedLeaderboard, getRunsLeaderboard } from "../../../../lib/reposi
 import {
   getCombinedStateLeaderboard,
   getCombinedStatePlayersByUF,
+  getRankedStateLeaderboard,
   getRankedStatePlayersByUF,
 } from "../../../../lib/repositories/states";
 import { readUUIDMap } from "../../../../lib/uuids";
@@ -10,15 +11,17 @@ import { readUUIDMap } from "../../../../lib/uuids";
 export const revalidate = 0;
 
 export async function GET() {
-  const [rsg116, rsgSsg, ranked, stateRows, statePlayersByUF, rankedStatePlayersByUF, uuidMap] = await Promise.all([
-    getRunsLeaderboard("1.16", 100, true),
-    getRunsLeaderboard("1.16 SSG", 100, true),
-    getRankedLeaderboard(100, true),
-    getCombinedStateLeaderboard(),
-    getCombinedStatePlayersByUF(50),
-    getRankedStatePlayersByUF(50, true),
-    readUUIDMap(undefined, true),
-  ]);
+  const [rsg116, rsgSsg, ranked, stateRows, rankedStateRows, statePlayersByUF, rankedStatePlayersByUF, uuidMap] =
+    await Promise.all([
+      getRunsLeaderboard("1.16", 100, true),
+      getRunsLeaderboard("1.16 SSG", 100, true),
+      getRankedLeaderboard(100, true),
+      getCombinedStateLeaderboard(),
+      getRankedStateLeaderboard(),
+      getCombinedStatePlayersByUF(50),
+      getRankedStatePlayersByUF(50, true),
+      readUUIDMap(undefined, true),
+    ]);
 
   const rsg116Rows = rsg116.map((r) => ({
     name: r.name,
@@ -48,6 +51,7 @@ export async function GET() {
       rsgSsgRows,
       rankedRows: ranked,
       stateRows,
+      rankedStateRows,
       statePlayersByUF,
       rankedStatePlayersByUF,
       uuidMap,
