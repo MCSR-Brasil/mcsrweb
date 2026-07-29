@@ -14,8 +14,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Minecraft Speedrunning BR",
-  description: "MCSR Brasil, vamo querer",
+  title: "MCSR Brasil",
+  description: "Site da comunidade brasileira de speedrun de Minecraft",
+  openGraph: {
+    title: "MCSR Brasil",
+    description: "Site da comunidade brasileira de speedrun de Minecraft",
+    siteName: "MCSR Brasil",
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "MCSR Brasil",
+    description: "Site da comunidade brasileira de speedrun de Minecraft",
+  },
 };
 
 export default function RootLayout({
