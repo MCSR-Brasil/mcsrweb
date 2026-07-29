@@ -182,9 +182,9 @@ function PlayerCard({
               referrerPolicy="no-referrer"
             />
           </div>
-          <div className="pointer-events-none absolute inset-y-0 left-2 flex items-center" aria-hidden="true">
+          <div className="pointer-events-none absolute inset-y-0 left-2 flex items-start pt-1" aria-hidden="true">
             <div
-              className="text-5xl leading-none text-white sm:text-6xl md:text-7xl"
+              className="text-2xl leading-none text-white sm:text-3xl md:text-4xl"
               style={{ fontFamily: "var(--font-display)" }}
             >
               #{rank}

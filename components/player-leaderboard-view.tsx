@@ -107,7 +107,6 @@ export function PlayerLeaderboardView({
                   "bg-gradient-to-br flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black tabular-nums text-white shadow-sm",
                   rankColor(selectedRank - 1),
                 ].join(" ")}
-                style={{ WebkitTextStroke: "1px black" }}
               >
                 #{selectedRank}
               </div>
@@ -293,11 +292,8 @@ function PlayerCard({
           </div>
           <div className="pointer-events-none absolute inset-y-0 left-2 flex items-start pt-1" aria-hidden="true">
             <div
-              className="text-4xl leading-none text-white sm:text-5xl md:text-6xl"
-              style={{
-                fontFamily: "var(--font-display)",
-                WebkitTextStroke: "1px black",
-              }}
+              className="text-2xl leading-none text-white sm:text-3xl md:text-4xl"
+              style={{ fontFamily: "var(--font-display)" }}
             >
               #{rank}
             </div>
