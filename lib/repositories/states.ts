@@ -113,9 +113,10 @@ async function buildCombinedStateData(
   maxPlayersPerState = 50,
   fresh = false
 ): Promise<BuiltStateData> {
-  const [rsgRuns, ssgRuns] = await Promise.all([
+  const [rsgRuns, ssgRuns, runners] = await Promise.all([
     getRunsLeaderboard("1.16", 1000, fresh),
     getRunsLeaderboard("1.16 SSG", 1000, fresh),
+    readRunnersAppsScript(fresh),
   ]);
 
   const byUFUniquePlayers = new Map<string, Set<string>>();
@@ -182,6 +183,16 @@ async function buildCombinedStateData(
         player.link = player.ssgLink;
       }
     }
+  }
+
+  for (const runner of runners) {
+    if (!runner.ranked) continue;
+    const uf = String(runner.stateUF ?? "").trim().toUpperCase();
+    const name = String(runner.name ?? "").trim();
+    if (!uf || !name) continue;
+
+    if (!byUFUniquePlayers.has(uf)) byUFUniquePlayers.set(uf, new Set());
+    byUFUniquePlayers.get(uf)?.add(name.toLowerCase());
   }
 
   const leaderboard = BRAZIL_STATES.map((s) => ({

@@ -17,7 +17,6 @@ type StateCategory = "rsg" | "ssg" | "ranked";
 
 export function StateLeaderboard({
   rows,
-  rankedRows,
   playersByUF,
   rankedPlayersByUF,
   uuidMap,
@@ -27,7 +26,6 @@ export function StateLeaderboard({
   withTopOverlay = false,
 }: {
   rows: StateLeaderboardRow[];
-  rankedRows?: StateLeaderboardRow[];
   playersByUF: StatePlayersByUF;
   rankedPlayersByUF?: RankedStatePlayersByUF;
   uuidMap?: UUIDMap;
@@ -36,7 +34,6 @@ export function StateLeaderboard({
   embedded?: boolean;
   withTopOverlay?: boolean;
 }) {
-  const activeRows = stateCategory === "ranked" && rankedRows ? rankedRows : rows;
   const defaultSelected = useMemo(() => rows.find((r) => r.value > 0) ?? rows[0] ?? null, [rows]);
   const [selectedUF, setSelectedUF] = useState<string>(defaultSelected?.uf ?? "SP");
   const [selectedName, setSelectedName] = useState<string>(defaultSelected?.name ?? "São Paulo");
@@ -97,7 +94,7 @@ export function StateLeaderboard({
     >
       <div className="relative min-w-0 flex-1">
         <StateMap
-          rows={activeRows}
+          rows={rows}
           selectedUF={selectedUF}
           onSelect={(uf: string, name: string) => {
             setSelectedUF(uf);

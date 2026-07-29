@@ -17,7 +17,6 @@ export function McRankingsView({
   rsg116Rows,
   rsgSsgRows,
   stateRows,
-  rankedStateRows,
   statePlayersByUF,
   rankedStatePlayersByUF,
   defaultMode,
@@ -28,7 +27,6 @@ export function McRankingsView({
   rsg116Rows: PlayerRow[];
   rsgSsgRows: PlayerRow[];
   stateRows: StateLeaderboardRow[];
-  rankedStateRows: StateLeaderboardRow[];
   statePlayersByUF: StatePlayersByUF;
   rankedStatePlayersByUF: RankedStatePlayersByUF;
   defaultMode: Mode;
@@ -99,7 +97,6 @@ export function McRankingsView({
         {stateView === "map" ? (
           <StateLeaderboard
             rows={stateRows}
-            rankedRows={rankedStateRows}
             playersByUF={statePlayersByUF}
             rankedPlayersByUF={rankedStatePlayersByUF}
             stateCategory={stateCategory}
