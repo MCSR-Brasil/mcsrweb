@@ -48,7 +48,7 @@ export type RunnerSourceRow = {
 
 const MCSR_RANKED_BR_API = "https://mcsrranked.com/api/leaderboard?country=BR";
 
-function normalizeUuid(raw: string | null | undefined): string {
+export function normalizeUuid(raw: string | null | undefined): string {
   return String(raw ?? "")
     .trim()
     .toLowerCase()

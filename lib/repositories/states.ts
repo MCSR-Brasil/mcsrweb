@@ -1,5 +1,5 @@
 import { BRAZIL_STATES } from "../states";
-import { getRankedLeaderboard, getRunsLeaderboard, readRunnersAppsScript } from "./leaderboards";
+import { getRankedLeaderboard, getRunsLeaderboard, normalizeUuid, readRunnersAppsScript } from "./leaderboards";
 import { normalizeName } from "../normalize";
 
 export type StateLeaderboardRow = {
@@ -255,7 +255,7 @@ async function buildRankedStateData(
   const eloByUuid = new Map<string, number>();
   const eloByName = new Map<string, number>();
   for (const r of ranked) {
-    const uuid = String(r.uuid ?? "").trim().toLowerCase();
+    const uuid = normalizeUuid(r.uuid);
     if (uuid) eloByUuid.set(uuid, r.value);
     eloByName.set(normalizeName(r.name), r.value);
   }
@@ -272,7 +272,7 @@ async function buildRankedStateData(
     if (!byUFUniquePlayers.has(uf)) byUFUniquePlayers.set(uf, new Set());
     byUFUniquePlayers.get(uf)?.add(name.toLowerCase());
 
-    const uuid = String(runner.uuid ?? "").trim().toLowerCase();
+    const uuid = normalizeUuid(runner.uuid);
     const elo = (uuid ? eloByUuid.get(uuid) : undefined) ?? eloByName.get(normalizeName(name)) ?? null;
 
     if (!byUFPlayers.has(uf)) byUFPlayers.set(uf, []);
