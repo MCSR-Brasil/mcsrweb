@@ -42,12 +42,14 @@ export function PlayerLeaderboardView({
 }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<PlayerRow | null>(null);
+  const [selectedRank, setSelectedRank] = useState(0);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setOpen(false);
         setSelected(null);
+        setSelectedRank(0);
       }
     }
     if (open) window.addEventListener("keydown", onKeyDown);
@@ -72,6 +74,7 @@ export function PlayerLeaderboardView({
               p.link
                 ? () => {
                     setSelected(p);
+                    setSelectedRank(i + 1);
                     setOpen(true);
                   }
                 : undefined
@@ -81,128 +84,167 @@ export function PlayerLeaderboardView({
       </div>
 
       {open && selected ? (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button
             type="button"
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => {
               setOpen(false);
               setSelected(null);
+              setSelectedRank(0);
             }}
-            aria-label="Close"
+            aria-label="Fechar"
           />
 
-          <div className="absolute left-1/2 top-1/2 w-[min(1100px,94vw)] -translate-x-1/2 -translate-y-1/2">
-            <div className="overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-950">
-              <div className="flex items-center justify-between gap-3 border-b border-zinc-300 px-4 py-3 dark:border-zinc-700">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-black text-zinc-900 dark:text-zinc-50">{selected.name}</div>
-                  <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                    {valueLabel ? valueLabel + ": " : ""}
-                    {formatValue(selected.value, valueFormat)}
-                    {selected.stateUF ? (
-                      <span className="ml-1 inline-flex align-middle">
-                        <StateFlag uf={selected.stateUF} />
-                      </span>
+          <div
+            className="relative z-10 flex w-full max-w-5xl max-h-[90dvh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+              <div
+                className={[
+                  "bg-gradient-to-br flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black tabular-nums text-white shadow-sm",
+                  rankColor(selectedRank - 1),
+                ].join(" ")}
+              >
+                #{selectedRank}
+              </div>
+              <img
+                src={getPlayerBustUrl(selected, uuidMap)}
+                alt={`${selected.name} head`}
+                className="h-12 w-12 rounded-lg border border-border bg-secondary object-cover"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+              <div className="min-w-0 flex-1">
+                <h3 className="font-minecraft truncate text-xl font-black text-card-foreground">
+                  {selected.name}
+                </h3>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                  {valueLabel ? valueLabel + ": " : ""}
+                  {formatValue(selected.value, valueFormat)}
+                  {selected.stateUF ? (
+                    <StateFlag uf={selected.stateUF} className="h-4 w-6 rounded" />
+                  ) : null}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setSelected(null);
+                  setSelectedRank(0);
+                }}
+                className="rounded-lg border border-border bg-card p-2 text-lg font-black text-muted-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid flex-1 grid-cols-1 overflow-y-auto md:grid-cols-2">
+              <div className="aspect-video bg-black md:aspect-auto md:min-h-[280px]">
+                {selectedEmbed ? (
+                  <iframe
+                    src={selectedEmbed}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center text-sm font-semibold text-zinc-300">
+                    <span>Não foi possível embutir este link.</span>
+                    {selected.link ? (
+                      <a
+                        href={selected.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline-offset-2 hover:underline"
+                      >
+                        Abrir link original
+                      </a>
                     ) : null}
                   </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    setSelected(null);
-                  }}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-black text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                >
-                  Fechar
-                </button>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 gap-0 md:grid-cols-2">
-                <div className="bg-black">
-                  <div className="aspect-video w-full">
-                    {selectedEmbed ? (
-                      <iframe
-                        src={selectedEmbed}
-                        className="h-full w-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        referrerPolicy="strict-origin-when-cross-origin"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm font-semibold text-zinc-200">
-                        Não foi possível embutir este link.
-                      </div>
-                    )}
+              <div className="space-y-4 overflow-y-auto p-5">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-wider text-muted-foreground">Tempo</div>
+                  <div className="font-minecraft text-4xl font-black tracking-tight text-primary">
+                    {formatValue(selected.value, valueFormat)}
                   </div>
                 </div>
 
-                <div className="p-5">
-                  <div className="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Detalhes</div>
-                  <div className="mt-3 max-h-[min(70vh,720px)] space-y-3 overflow-y-auto pr-1">
-                    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                      <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Tempo</div>
-                      <div className="mt-1 text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-                        {formatValue(selected.value, valueFormat)}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                        <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Jogador</div>
-                        <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">{selected.name}</div>
-                      </div>
-                      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                        <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Data</div>
-                        <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">
-                          {formatDisplayDate(selected.achievedAt)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                      <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Link</div>
-                      {selected.link ? (
-                        <a
-                          href={selected.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-1 block truncate text-sm font-black text-emerald-700 hover:underline dark:text-emerald-400"
-                        >
-                          {selected.link}
-                        </a>
+                <div className="grid grid-cols-2 gap-3">
+                  <Detail label="Jogador" value={selected.name} />
+                  <Detail
+                    label="Estado"
+                    value={
+                      selected.stateUF ? (
+                        <StateFlag uf={selected.stateUF} className="h-5 w-7 rounded" />
                       ) : (
-                        <div className="mt-1 text-sm font-black text-zinc-900 dark:text-zinc-50">—</div>
-                      )}
-                    </div>
+                        "—"
+                      )
+                    }
+                  />
+                  <Detail label="Data" value={formatDisplayDate(selected.achievedAt)} />
+                  <Detail label="Categoria" value={valueLabel || "RSG 1.16"} />
+                  <Detail label="Bastion" value={selected.bastion || "—"} />
+                  <Detail
+                    label="Seed"
+                    value={selected.seed ? <CopySeed seed={selected.seed} /> : "—"}
+                  />
+                </div>
 
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                        <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Bastion</div>
-                        <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">
-                          {selected.bastion ? selected.bastion : "—"}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                        <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Seed</div>
-                        <div className="mt-1 truncate text-sm font-black text-zinc-900 dark:text-zinc-50">
-                          {selected.seed ? selected.seed : "—"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                      <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Descrição</div>
-                      {selected.description ? (
-                        <div className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap break-words text-sm font-semibold leading-relaxed text-zinc-800 dark:text-zinc-100">
-                          {selected.description}
-                        </div>
-                      ) : (
-                        <div className="mt-1 text-sm font-black text-zinc-900 dark:text-zinc-50">—</div>
-                      )}
+                {selected.description ? (
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-wider text-muted-foreground">Descrição</div>
+                    <div className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-border bg-card p-3 text-sm font-semibold leading-relaxed text-card-foreground">
+                      {selected.description}
                     </div>
                   </div>
+                ) : null}
+
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  {selected.link ? (
+                    <a
+                      href={selected.link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-black text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                    >
+                      Assistir run
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" x2="21" y1="14" y2="3" />
+                      </svg>
+                    </a>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      setSelected(null);
+                      setSelectedRank(0);
+                    }}
+                    className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-black text-card-foreground shadow-sm transition-colors hover:bg-secondary"
+                  >
+                    Fechar
+                  </button>
                 </div>
               </div>
             </div>
@@ -229,20 +271,7 @@ function PlayerCard({
   onClick?: (() => void) | undefined;
 }) {
   const paneColors = rankColor(rank - 1);
-  const placeholderUUIDs = [
-    "7601ed6f-f96d-4d1c-aa8b-f08fdab2a1d0",
-    "069a79f4-44e9-4726-a5be-fca90e38aaf5",
-    "853c80ef-3c37-49fd-aa49-938b674adae6",
-    "4566e69f-c907-48ee-8d71-d7ba5aa00d20",
-  ];
-  let hash = 0;
-  for (let i = 0; i < player.name.length; i++) hash = (hash * 31 + player.name.charCodeAt(i)) >>> 0;
-  const idx = hash % placeholderUUIDs.length;
-  const key = normalizeName(player.name);
-  const mapped = uuidMap[key];
-  const direct = String(player.uuid ?? "").trim().toLowerCase().replace(/[^a-f0-9]/g, "");
-  const finalUUID = direct || mapped || placeholderUUIDs[idx];
-  const bustUrl = `https://skins.mcstats.com/bust/${finalUUID}`;
+  const bustUrl = getPlayerBustUrl(player, uuidMap);
 
   return (
     <button
@@ -268,10 +297,13 @@ function PlayerCard({
               referrerPolicy="no-referrer"
             />
           </div>
-          <div className="pointer-events-none absolute inset-y-0 left-2 flex items-center" aria-hidden="true">
+          <div className="pointer-events-none absolute inset-y-0 left-2 flex items-start pt-1" aria-hidden="true">
             <div
-              className="text-5xl leading-none text-white sm:text-6xl md:text-7xl"
-              style={{ fontFamily: "var(--font-display)" }}
+              className="text-3xl leading-none text-white sm:text-4xl md:text-5xl"
+              style={{
+                fontFamily: "var(--font-display)",
+                WebkitTextStroke: "3px black",
+              }}
             >
               #{rank}
             </div>
@@ -394,4 +426,68 @@ function formatTimeMs(ms: number) {
   const mm = String(minutes).padStart(2, "0");
   const ss = String(seconds).padStart(2, "0");
   return `${mm}:${ss}`;
+}
+
+function getPlayerBustUrl(player: PlayerRow, uuidMap: UUIDMap): string {
+  const placeholderUUIDs = [
+    "7601ed6f-f96d-4d1c-aa8b-f08fdab2a1d0",
+    "069a79f4-44e9-4726-a5be-fca90e38aaf5",
+    "853c80ef-3c37-49fd-aa49-938b674adae6",
+    "4566e69f-c907-48ee-8d71-d7ba5aa00d20",
+  ];
+  let hash = 0;
+  for (let i = 0; i < player.name.length; i++) hash = (hash * 31 + player.name.charCodeAt(i)) >>> 0;
+  const idx = hash % placeholderUUIDs.length;
+  const key = normalizeName(player.name);
+  const mapped = uuidMap[key];
+  const direct = String(player.uuid ?? "").trim().toLowerCase().replace(/[^a-f0-9]/g, "");
+  const finalUUID = direct || mapped || placeholderUUIDs[idx];
+  return `https://skins.mcstats.com/bust/${finalUUID}`;
+}
+
+function Detail({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="text-xs font-semibold text-muted-foreground">{label}</div>
+      <div className="mt-1 truncate text-sm font-black text-card-foreground">{value}</div>
+    </div>
+  );
+}
+
+function CopySeed({ seed }: { seed: string }) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(seed);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          // ignore
+        }
+      }}
+      className="inline-flex items-center gap-1 text-sm font-black text-primary hover:underline"
+      title="Copiar seed"
+    >
+      {seed}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+      </svg>
+      {copied ? <span className="text-xs text-muted-foreground">copiado</span> : null}
+    </button>
+  );
 }

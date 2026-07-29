@@ -105,17 +105,20 @@
 .font-minecraft {
   font-family: var(--font-minecraft);
   letter-spacing: 0.04em;
+  word-spacing: normal;
 }
 
 .font-minecraft-body {
   font-family: var(--font-minecraft-body);
   letter-spacing: -0.02em;
+  word-spacing: 0.35em;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-minecraft-body);
+  word-spacing: 0.35em;
   -webkit-font-smoothing: antialiased;
 }
 
