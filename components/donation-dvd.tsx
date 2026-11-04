@@ -236,6 +236,16 @@ export function DonationDvd({
       className={`${variant === "fixed" ? "fixed" : "absolute"} inset-0 overflow-hidden${variant === "fill" ? " pointer-events-none" : ""}`}
       style={{ background: "transparent" }}
     >
+      <div
+        className="fixed bottom-3 left-4 z-10 select-none text-left text-xs font-bold leading-snug text-emerald-500 opacity-80 sm:text-sm"
+        style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}
+      >
+        Obrigado a todos
+        <br />
+        Que doaram para
+        <br />
+        nossa Comunidade
+      </div>
       {donors.map((d, i) => (
         <div
           key={`${d.name}-${i}`}
