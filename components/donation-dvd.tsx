@@ -1,14 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { DvdDonor } from "../lib/donations";
 
-export type DvdDonor = {
-  name: string;
-  headUrl: string;
-  headFallbacks: string[];
-  amountLabel: string;
-  size: number; // px, already scaled by donation curve
-};
+export type { DvdDonor };
 
 const RETRY_DELAYS_MS = [4000, 10000]; // retry primary twice before falling back
 
@@ -99,7 +94,13 @@ function randomVelocity(): { vx: number; vy: number } {
   return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
 }
 
-export function DonationDvd({ donors }: { donors: DvdDonor[] }) {
+export function DonationDvd({
+  donors,
+  variant = "fixed",
+}: {
+  donors: DvdDonor[];
+  variant?: "fixed" | "fill";
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const bodiesRef = useRef<Body[]>([]);
@@ -195,7 +196,7 @@ export function DonationDvd({ donors }: { donors: DvdDonor[] }) {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 overflow-hidden"
+      className={`${variant === "fixed" ? "fixed" : "absolute"} inset-0 overflow-hidden${variant === "fill" ? " pointer-events-none" : ""}`}
       style={{ background: "transparent" }}
     >
       {donors.map((d, i) => (

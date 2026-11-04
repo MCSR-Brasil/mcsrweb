@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteShell } from "../components/site-shell";
+import { DonationBackdrop } from "../components/donation-backdrop";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +41,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
       >
-        <SiteShell>{children}</SiteShell>
+        <SiteShell backdrop={<DonationBackdrop />}>{children}</SiteShell>
       </body>
     </html>
   );

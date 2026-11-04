@@ -1,11 +1,65 @@
 import { fetchAppsScriptAction } from "./sheets-backend";
 import { normalizeName } from "./normalize";
+import { readUUIDMap, type UUIDMap } from "./uuids";
 
 export type Donation = {
   name: string;
   normalizedName: string;
   amount: number;
 };
+
+export type DvdDonor = {
+  name: string;
+  headUrl: string;
+  headFallbacks: string[];
+  amountLabel: string;
+  size: number; // px, already scaled by donation curve
+};
+
+// Log curve: heads grow quickly at low donations and flatten out at the top,
+// so a R$ 10 donor is still readable and a R$ 1500 donor isn't gigantic.
+const MIN_SIZE = 56;
+const MAX_SIZE = 150;
+
+function headSize(amount: number, maxAmount: number): number {
+  const t = Math.log(1 + Math.max(0, amount)) / Math.log(1 + Math.max(1, maxAmount));
+  return Math.round(MIN_SIZE + (MAX_SIZE - MIN_SIZE) * Math.min(1, t));
+}
+
+function formatBRL(amount: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+  }).format(amount);
+}
+
+export function toDvdDonors(donations: Donation[], uuidMap: UUIDMap): DvdDonor[] {
+  const maxAmount = donations[0]?.amount ?? 0;
+  return donations.map((d) => {
+    const uuid = uuidMap[d.normalizedName];
+    const id = encodeURIComponent(uuid ?? d.name);
+    return {
+      name: d.name,
+      headUrl: `https://mc-heads.net/avatar/${id}/100`,
+      headFallbacks: [
+        `https://crafatar.com/avatars/${id}?size=100&overlay`,
+        `https://minotar.net/helm/${encodeURIComponent(d.name)}/100.png`,
+        "https://mc-heads.net/avatar/MHF_Steve/100",
+      ],
+      amountLabel: formatBRL(d.amount),
+      size: headSize(d.amount, maxAmount),
+    };
+  });
+}
+
+export async function getDvdDonors(fresh = true): Promise<DvdDonor[]> {
+  const [donations, uuidMap] = await Promise.all([
+    readDonations(fresh),
+    readUUIDMap(undefined, fresh),
+  ]);
+  return toDvdDonors(donations, uuidMap);
+}
 
 function parseAmount(raw: unknown): number | null {
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
