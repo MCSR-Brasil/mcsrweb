@@ -1,7 +1,30 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { TopNav } from "./top-nav";
 
 export function SiteShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isOverlay = pathname?.startsWith("/overlay") ?? false;
+
+  useEffect(() => {
+    if (!isOverlay) return;
+    const { body, documentElement } = document;
+    const prevBodyBg = body.style.background;
+    const prevHtmlBg = documentElement.style.background;
+    body.style.background = "transparent";
+    documentElement.style.background = "transparent";
+    return () => {
+      body.style.background = prevBodyBg;
+      documentElement.style.background = prevHtmlBg;
+    };
+  }, [isOverlay]);
+
+  if (isOverlay) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-zinc-50 to-zinc-100 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
       <div className="relative overflow-hidden">
