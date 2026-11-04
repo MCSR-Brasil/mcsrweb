@@ -1,13 +1,45 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type DvdDonor = {
   name: string;
   headUrl: string;
+  headFallbacks: string[];
   amountLabel: string;
   size: number; // px, already scaled by donation curve
 };
+
+const RETRY_DELAYS_MS = [4000, 10000]; // retry primary twice before falling back
+
+function HeadImage({ donor }: { donor: DvdDonor }) {
+  // Stage 0..N = retrying primary; then walk through headFallbacks.
+  const [failCount, setFailCount] = useState(0);
+  const src =
+    failCount <= RETRY_DELAYS_MS.length
+      ? donor.headUrl
+      : (donor.headFallbacks[failCount - RETRY_DELAYS_MS.length - 1] ??
+        donor.headFallbacks[donor.headFallbacks.length - 1]);
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      key={`${src}#${failCount}`}
+      src={src}
+      alt={`${donor.name} head`}
+      width={donor.size}
+      height={donor.size}
+      draggable={false}
+      className="select-none"
+      style={{ imageRendering: "pixelated", width: donor.size, height: donor.size }}
+      onError={() => {
+        const delay =
+          failCount < RETRY_DELAYS_MS.length ? RETRY_DELAYS_MS[failCount] : 0;
+        setTimeout(() => setFailCount((c) => c + 1), delay);
+      }}
+    />
+  );
+}
 
 type Body = {
   x: number;
@@ -178,22 +210,13 @@ export function DonationDvd({ donors }: { donors: DvdDonor[] }) {
           <div
             className="w-full truncate text-center font-semibold text-white"
             style={{
-              fontSize: Math.max(11, d.size * 0.13),
+              fontSize: Math.max(16, d.size * 0.16),
               textShadow: "0 1px 3px rgba(0,0,0,0.9)",
             }}
           >
             {d.name}
           </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={d.headUrl}
-            alt={`${d.name} head`}
-            width={d.size}
-            height={d.size}
-            draggable={false}
-            className="select-none"
-            style={{ imageRendering: "pixelated", width: d.size, height: d.size }}
-          />
+          <HeadImage donor={d} />
           <div
             className="w-full truncate text-center font-bold text-emerald-400"
             style={{

@@ -3,7 +3,7 @@ import { readDonations } from "../../../lib/donations";
 import { readUUIDMap } from "../../../lib/uuids";
 import { DonationDvd, type DvdDonor } from "../../../components/donation-dvd";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Donations Overlay",
@@ -53,15 +53,21 @@ export default async function DonationsOverlayPage({
         })),
         await readUUIDMap(),
       ]
-    : await Promise.all([readDonations(), readUUIDMap()]);
+    : await Promise.all([readDonations(true), readUUIDMap(undefined, true)]);
 
   const maxAmount = donations[0]?.amount ?? 0;
 
   const donors: DvdDonor[] = donations.map((d) => {
     const uuid = uuidMap[d.normalizedName];
+    const id = encodeURIComponent(uuid ?? d.name);
     return {
       name: d.name,
-      headUrl: `https://mc-heads.net/avatar/${encodeURIComponent(uuid ?? d.name)}/100`,
+      headUrl: `https://mc-heads.net/avatar/${id}/100`,
+      headFallbacks: [
+        `https://crafatar.com/avatars/${id}?size=100&overlay`,
+        `https://minotar.net/helm/${encodeURIComponent(d.name)}/100.png`,
+        "https://mc-heads.net/avatar/MHF_Steve/100",
+      ],
       amountLabel: formatBRL(d.amount),
       size: headSize(d.amount, maxAmount),
     };
