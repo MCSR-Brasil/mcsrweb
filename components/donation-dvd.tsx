@@ -25,6 +25,8 @@ function HeadImage({ donor }: { donor: DvdDonor }) {
       width={donor.size}
       height={donor.size}
       draggable={false}
+      loading="lazy"
+      decoding="async"
       className="select-none"
       style={{ imageRendering: "pixelated", width: donor.size, height: donor.size }}
       onError={() => {
@@ -45,7 +47,18 @@ type Body = {
   h: number;
   r: number; // collision radius (circle around the head)
   m: number; // mass, proportional to head area
+  born: number; // timestamp when this head becomes visible
 };
+
+function spawn(b: Body, boundsW: number, boundsH: number) {
+  b.x = Math.random() * Math.max(0, boundsW - b.w);
+  b.y = Math.random() * Math.max(0, boundsH - b.h);
+  const { vx, vy } = randomVelocity();
+  b.vx = vx;
+  b.vy = vy;
+}
+
+const SPAWN_STAGGER_MS = 450;
 
 function resolveCollision(a: Body, b: Body) {
   const acx = a.x + a.w / 2;
@@ -113,33 +126,46 @@ export function DonationDvd({
     let boundsH = container.clientHeight;
 
     // Initialize bodies once nodes are measurable.
+    const t0 = performance.now();
     bodiesRef.current = donors.map((_, i) => {
       const el = nodeRefs.current[i];
       const w = el?.offsetWidth ?? donors[i].size;
       const h = el?.offsetHeight ?? donors[i].size + 48;
-      const { vx, vy } = randomVelocity();
       const r = donors[i].size / 2;
-      return {
-        x: Math.random() * Math.max(0, boundsW - w),
-        y: Math.random() * Math.max(0, boundsH - h),
-        vx,
-        vy,
+      const b: Body = {
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
         w,
         h,
         r,
         m: r * r,
+        born: t0 + i * SPAWN_STAGGER_MS,
       };
+      spawn(b, boundsW, boundsH);
+      return b;
     });
 
-    const onResize = () => {
-      boundsW = container.clientWidth;
-      boundsH = container.clientHeight;
+    const syncBounds = () => {
+      const newW = container.clientWidth;
+      const newH = container.clientHeight;
+      const shrunk = newW < boundsW || newH < boundsH;
+      boundsW = newW;
+      boundsH = newH;
       for (const b of bodiesRef.current) {
-        b.x = Math.min(b.x, Math.max(0, boundsW - b.w));
-        b.y = Math.min(b.y, Math.max(0, boundsH - b.h));
+        const out = b.x + b.w > boundsW || b.y + b.h > boundsH;
+        if (out && shrunk) {
+          spawn(b, boundsW, boundsH); // page shrank: respawn somewhere reachable
+        } else {
+          b.x = Math.min(Math.max(0, b.x), Math.max(0, boundsW - b.w));
+          b.y = Math.min(Math.max(0, b.y), Math.max(0, boundsH - b.h));
+        }
       }
     };
-    window.addEventListener("resize", onResize);
+    const ro = new ResizeObserver(syncBounds);
+    ro.observe(container);
+    window.addEventListener("resize", syncBounds);
 
     let raf = 0;
     let last = performance.now();
@@ -149,6 +175,13 @@ export function DonationDvd({
       last = now;
 
       bodiesRef.current.forEach((b, i) => {
+        const el = nodeRefs.current[i];
+        if (now < b.born) {
+          if (el) el.style.opacity = "0";
+          return;
+        }
+        if (el && el.style.opacity === "0") el.style.opacity = "1";
+
         b.x += b.vx * dt;
         b.y += b.vy * dt;
 
@@ -168,19 +201,22 @@ export function DonationDvd({
           b.vy = -Math.abs(b.vy);
         }
 
-        const el = nodeRefs.current[i];
         if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
       });
 
       const bodies = bodiesRef.current;
       for (let i = 0; i < bodies.length; i++) {
         for (let j = i + 1; j < bodies.length; j++) {
-          resolveCollision(bodies[i], bodies[j]);
+          if (bodies[i].born <= now && bodies[j].born <= now) {
+            resolveCollision(bodies[i], bodies[j]);
+          }
         }
       }
       bodies.forEach((b, i) => {
         const el = nodeRefs.current[i];
-        if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
+        if (el && b.born <= now) {
+          el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
+        }
       });
 
       raf = requestAnimationFrame(tick);
@@ -189,7 +225,8 @@ export function DonationDvd({
     raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
+      ro.disconnect();
+      window.removeEventListener("resize", syncBounds);
     };
   }, [donors]);
 
@@ -205,8 +242,8 @@ export function DonationDvd({
           ref={(el) => {
             nodeRefs.current[i] = el;
           }}
-          className="absolute left-0 top-0 flex flex-col items-center will-change-transform"
-          style={{ width: d.size }}
+          className="absolute left-0 top-0 flex flex-col items-center transition-opacity duration-300 will-change-transform"
+          style={{ width: d.size, opacity: 0 }}
         >
           <div
             className="w-full whitespace-nowrap text-center font-semibold text-white"

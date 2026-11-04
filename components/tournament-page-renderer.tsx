@@ -54,7 +54,7 @@ function SsgTournamentLayout({ data }: { data: TournamentPageData }) {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-zinc-300 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-zinc-300 bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/70 sm:p-8">
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="relative">
           <h1 className="mt-3 font-minecraft text-3xl font-black tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">{pageTitle}</h1>
@@ -114,7 +114,7 @@ function SsgTournamentLayout({ data }: { data: TournamentPageData }) {
         </section>
       ) : null}
 
-      <section className="space-y-4 rounded-2xl border border-zinc-300 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:p-6">
+      <section className="space-y-4 rounded-2xl border border-zinc-300 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/70 sm:p-6">
         {tabs.length > 0 ? (
           <div className="flex justify-center">
             <div className="inline-flex flex-wrap items-center justify-center gap-2 rounded-3xl border border-zinc-200/80 bg-white/90 p-3 shadow-lg backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-900/85 sm:p-4">
@@ -318,7 +318,7 @@ function RankingTournamentLayout({ data }: { data: TournamentPageData }) {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-zinc-300 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-zinc-300 bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/70 sm:p-8">
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="relative">
           <h1 className="mt-3 font-minecraft text-3xl font-black tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">{pageTitle}</h1>
@@ -329,7 +329,7 @@ function RankingTournamentLayout({ data }: { data: TournamentPageData }) {
       <div className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300 sm:text-lg">{renderMarkdown(pageDescription)}</div>
 
       {hasLinks ? (
-        <section className="rounded-2xl border border-zinc-300 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:p-6">
+        <section className="rounded-2xl border border-zinc-300 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/70 sm:p-6">
           <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">Links</div>
           <div className="flex flex-wrap gap-2">
             {data.content.links.map((link, idx) => (
@@ -347,7 +347,7 @@ function RankingTournamentLayout({ data }: { data: TournamentPageData }) {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-zinc-300 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:p-6">
+      <section className="rounded-2xl border border-zinc-300 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/70 sm:p-6">
         <div className="mb-4 text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">Podium</div>
 
         {!hasResults ? (

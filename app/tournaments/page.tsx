@@ -20,7 +20,7 @@ export default async function TournamentsIndexPage() {
             key={t.slug}
             href={`/tournaments/${t.slug}`}
             prefetch
-            className="group relative block overflow-hidden rounded-3xl border border-zinc-300 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 sm:p-7"
+            className="group relative block overflow-hidden rounded-3xl border border-zinc-300 bg-white/80 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900/70 sm:p-7"
           >
             <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
 

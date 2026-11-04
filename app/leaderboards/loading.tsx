@@ -1,12 +1,12 @@
 export default function LeaderboardsLoading() {
   return (
     <div className="space-y-6 animate-pulse">
-      <section className="relative overflow-hidden rounded-3xl border border-zinc-300 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:p-8">
+      <section className="relative overflow-hidden rounded-3xl border border-zinc-300 bg-white/80 p-6 shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/70 sm:p-8">
         <div className="h-10 w-2/3 rounded bg-zinc-200 dark:bg-zinc-800" />
         <div className="mt-4 h-4 w-1/2 rounded bg-zinc-200 dark:bg-zinc-800" />
       </section>
 
-      <section className="rounded-2xl border border-zinc-300 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:p-6">
+      <section className="rounded-2xl border border-zinc-300 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/70 sm:p-6">
         <div className="mb-4 flex flex-wrap gap-2">
           <div className="h-9 w-28 rounded-full bg-zinc-200 dark:bg-zinc-800" />
           <div className="h-9 w-28 rounded-full bg-zinc-200 dark:bg-zinc-800" />
