@@ -16,7 +16,50 @@ type Body = {
   vy: number;
   w: number;
   h: number;
+  r: number; // collision radius (circle around the head)
+  m: number; // mass, proportional to head area
 };
+
+function resolveCollision(a: Body, b: Body) {
+  const acx = a.x + a.w / 2;
+  const acy = a.y + a.h / 2;
+  const bcx = b.x + b.w / 2;
+  const bcy = b.y + b.h / 2;
+
+  let dx = bcx - acx;
+  let dy = bcy - acy;
+  let dist = Math.hypot(dx, dy);
+  const minDist = a.r + b.r;
+  if (dist >= minDist) return;
+
+  if (dist === 0) {
+    dx = 1;
+    dy = 0;
+    dist = 1;
+  }
+  const nx = dx / dist;
+  const ny = dy / dist;
+
+  // Push apart so circles no longer overlap (split by inverse mass).
+  const overlap = minDist - dist;
+  const totalM = a.m + b.m;
+  a.x -= nx * overlap * (b.m / totalM);
+  a.y -= ny * overlap * (b.m / totalM);
+  b.x += nx * overlap * (a.m / totalM);
+  b.y += ny * overlap * (a.m / totalM);
+
+  // Elastic collision along the normal with real masses.
+  const rvx = b.vx - a.vx;
+  const rvy = b.vy - a.vy;
+  const relVel = rvx * nx + rvy * ny;
+  if (relVel >= 0) return; // already separating
+
+  const impulse = (-(1 + 1) * relVel) / (1 / a.m + 1 / b.m);
+  a.vx -= (impulse / a.m) * nx;
+  a.vy -= (impulse / a.m) * ny;
+  b.vx += (impulse / b.m) * nx;
+  b.vy += (impulse / b.m) * ny;
+}
 
 function randomVelocity(): { vx: number; vy: number } {
   const speed = 90 + Math.random() * 90; // px/s
@@ -42,6 +85,7 @@ export function DonationDvd({ donors }: { donors: DvdDonor[] }) {
       const w = el?.offsetWidth ?? donors[i].size;
       const h = el?.offsetHeight ?? donors[i].size + 48;
       const { vx, vy } = randomVelocity();
+      const r = donors[i].size / 2;
       return {
         x: Math.random() * Math.max(0, boundsW - w),
         y: Math.random() * Math.max(0, boundsH - h),
@@ -49,6 +93,8 @@ export function DonationDvd({ donors }: { donors: DvdDonor[] }) {
         vy,
         w,
         h,
+        r,
+        m: r * r,
       };
     });
 
@@ -89,6 +135,17 @@ export function DonationDvd({ donors }: { donors: DvdDonor[] }) {
           b.vy = -Math.abs(b.vy);
         }
 
+        const el = nodeRefs.current[i];
+        if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
+      });
+
+      const bodies = bodiesRef.current;
+      for (let i = 0; i < bodies.length; i++) {
+        for (let j = i + 1; j < bodies.length; j++) {
+          resolveCollision(bodies[i], bodies[j]);
+        }
+      }
+      bodies.forEach((b, i) => {
         const el = nodeRefs.current[i];
         if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
       });
