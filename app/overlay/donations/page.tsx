@@ -28,8 +28,32 @@ function formatBRL(amount: number): string {
   }).format(amount);
 }
 
-export default async function DonationsOverlayPage() {
-  const [donations, uuidMap] = await Promise.all([readDonations(), readUUIDMap()]);
+const DEMO_DONATIONS = [
+  { name: "epik", amount: 1500 },
+  { name: "booster", amount: 440 },
+  { name: "sanjinhu", amount: 220 },
+  { name: "shy", amount: 90 },
+  { name: "ferrer", amount: 30 },
+  { name: "darkk", amount: 10 },
+];
+
+export default async function DonationsOverlayPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const demo = "demo" in params;
+
+  const [donations, uuidMap] = demo
+    ? [
+        DEMO_DONATIONS.map((d) => ({
+          ...d,
+          normalizedName: d.name.toLowerCase(),
+        })),
+        await readUUIDMap(),
+      ]
+    : await Promise.all([readDonations(), readUUIDMap()]);
 
   const maxAmount = donations[0]?.amount ?? 0;
 

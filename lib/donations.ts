@@ -32,7 +32,7 @@ function parseDonationItem(item: unknown): Donation | null {
 }
 
 export async function readDonations(fresh = false): Promise<Donation[]> {
-  const json = await fetchAppsScriptAction("getDonations", { fresh });
+  const json = await fetchAppsScriptAction("getdonations", { fresh });
   if (!json) return [];
 
   const raw = Array.isArray(json.donations)
