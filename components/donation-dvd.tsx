@@ -208,7 +208,7 @@ export function DonationDvd({ donors }: { donors: DvdDonor[] }) {
           style={{ width: d.size }}
         >
           <div
-            className="w-full truncate text-center font-semibold text-white"
+            className="w-full whitespace-nowrap text-center font-semibold text-white"
             style={{
               fontSize: Math.max(16, d.size * 0.16),
               textShadow: "0 1px 3px rgba(0,0,0,0.9)",
