@@ -35,11 +35,13 @@ export async function readDonations(fresh = false): Promise<Donation[]> {
   const json = await fetchAppsScriptAction("getdonations", { fresh });
   if (!json) return [];
 
-  const raw = Array.isArray(json.donations)
-    ? json.donations
-    : Array.isArray(json.data)
-      ? json.data
-      : [];
+  const raw = Array.isArray(json.apoiadores)
+    ? json.apoiadores
+    : Array.isArray(json.donations)
+      ? json.donations
+      : Array.isArray(json.data)
+        ? json.data
+        : [];
 
   const byName = new Map<string, Donation>();
   for (const item of raw) {
