@@ -271,7 +271,7 @@ function PlayerCard({
       type="button"
       onClick={onClick}
       className={
-        "group relative w-full overflow-hidden rounded-xl border border-zinc-300 bg-white text-left shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 " +
+        "group relative w-full overflow-hidden rounded-xl border border-zinc-300 bg-white/90 text-left shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900/90 " +
         (onClick ? "hover:shadow-lg hover:scale-[1.01]" : "")
       }
     >

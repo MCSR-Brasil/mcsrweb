@@ -92,7 +92,7 @@ function EventsView({ events }: { events: EventRow[] }) {
             return (
               <div
                 key={`${e.event}-${e.date ?? ""}-${i}`}
-                className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+                className="rounded-2xl border border-border bg-card/90 p-5 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
@@ -113,7 +113,7 @@ function EventsView({ events }: { events: EventRow[] }) {
                 {winners.length > 0 ? (
                   <div className="mt-5">
                     <div className="mb-2 text-xs font-black uppercase tracking-wider text-muted-foreground">Vencedores</div>
-                    <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+                    <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card/90">
                       {winners.map((w, idx) => (
                         <div
                           key={`${w.name}-${idx}`}

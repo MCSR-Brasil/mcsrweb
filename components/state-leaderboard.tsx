@@ -243,7 +243,7 @@ function SidebarPlayerRow({
   const skinUrl = useMemo(() => skinAvatarUrl(name, uuidMap), [name, uuidMap]);
 
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition-all hover:border-primary hover:shadow-md">
+    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/90 px-4 py-3.5 shadow-sm transition-all hover:border-primary hover:shadow-md">
       <div className="flex min-w-0 items-center gap-4">
         <div
           className={[
@@ -300,7 +300,7 @@ function RankedSidebarPlayerRow({
   const skinUrl = useMemo(() => skinAvatarUrl(name, uuidMap), [name, uuidMap]);
 
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-sm transition-all hover:border-primary hover:shadow-md">
+    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/90 px-4 py-3.5 shadow-sm transition-all hover:border-primary hover:shadow-md">
       <div className="flex min-w-0 items-center gap-4">
         <div
           className={[

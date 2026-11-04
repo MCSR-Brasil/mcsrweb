@@ -52,7 +52,7 @@ export function McRankingsView({
   ];
 
   const selectorIsland = (
-    <div className="space-y-3 rounded-3xl border border-border bg-card p-3 shadow-lg shadow-primary/5 sm:p-4">
+    <div className="space-y-3 rounded-3xl border border-border bg-card/90 p-3 shadow-lg shadow-primary/5 sm:p-4">
       <div className="flex flex-wrap gap-2">
         {modeItems.map((item) => (
           <button
@@ -107,7 +107,7 @@ export function McRankingsView({
           />
         ) : (
           <div className="mx-auto max-w-6xl px-4 pb-12 pt-24 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm shadow-primary/5 sm:p-8">
+            <div className="rounded-2xl border border-border bg-card/90 p-6 shadow-sm shadow-primary/5 sm:p-8">
               <h2 className="font-minecraft mb-6 text-center text-2xl font-black tracking-tight text-card-foreground">
                 Ranking por Estados
               </h2>

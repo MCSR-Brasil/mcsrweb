@@ -113,7 +113,7 @@ export function RankingsView({
                 selectedBreakdown.map((row, idx) => (
                   <div
                     key={`${row.event}-${idx}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950/40"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white/90 p-4 dark:border-zinc-800 dark:bg-zinc-950/40"
                   >
                     <div className="min-w-0">
                       <div className="truncate text-base font-extrabold text-zinc-900 dark:text-zinc-50">{row.event}</div>
@@ -165,7 +165,7 @@ function PlayerCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative w-full overflow-hidden rounded-xl border border-zinc-200 bg-white text-left shadow-sm transition-all hover:scale-[1.01] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-zinc-800 dark:bg-zinc-900 dark:focus-visible:ring-offset-zinc-950"
+      className="group relative w-full overflow-hidden rounded-xl border border-zinc-200 bg-white/90 text-left shadow-sm transition-all hover:scale-[1.01] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-zinc-800 dark:bg-zinc-900/90 dark:focus-visible:ring-offset-zinc-950"
     >
       <div className="flex items-stretch">
         <div
