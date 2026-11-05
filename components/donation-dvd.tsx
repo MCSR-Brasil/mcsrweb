@@ -52,6 +52,7 @@ type Body = {
   maxHp: number;
   deadUntil: number; // performance.now() timestamp to respawn, 0 = alive
   lastHitAt: number; // damage cooldown
+  respawnMs: number; // bigger heads take longer to come back
 };
 
 function spawn(b: Body, boundsW: number, boundsH: number) {
@@ -80,9 +81,12 @@ const BLOCK_MAX_ALIVE = 5;
 const BLOCK_SIZE = 96;
 const SLIME_BOOST = 1.4;
 const MAX_SPEED = 560;
-const WOOD_DRAG = 0.98; // wood/stone and wall hits remove 2% of speed
+const WOOD_DRAG = 0.98; // wood/stone hits remove 2% of speed
 const HIT_COOLDOWN_MS = 700;
-const RESPAWN_MS = 18_000;
+const RESPAWN_MIN_MS = 12_000; // smallest heads respawn fast
+const RESPAWN_MAX_MS = 36_000; // biggest heads take the longest
+const ATTACKER_BOOST = 1.1; // small speed bonus for a clean hit
+const APPROACH_MIN = 20; // px/s toward the other head to count as attacking
 
 const MC_TEX_BASE =
   "https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/block";
@@ -209,6 +213,36 @@ function randomVelocity(): { vx: number; vy: number } {
   return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
 }
 
+function FunBlockEl({ blk }: { blk: FunBlock }) {
+  const [opacity, setOpacity] = useState(0);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setOpacity(1));
+    // Fade out shortly before the block despawns.
+    const fadeOutAt = Math.max(0, blk.until - Date.now() - 400);
+    const t = setTimeout(() => setOpacity(0), fadeOutAt);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+    };
+  }, [blk.until]);
+
+  return (
+    <div
+      className="absolute select-none transition-opacity duration-300"
+      style={{
+        left: blk.x,
+        top: blk.y,
+        width: blk.size,
+        height: blk.size,
+        imageRendering: "pixelated",
+        opacity,
+        ...blockStyle(blk.type),
+      }}
+    />
+  );
+}
+
 function isMobileDevice(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(pointer: coarse), (max-width: 768px)").matches;
@@ -228,6 +262,7 @@ export function DonationDvd({
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const bodiesRef = useRef<Body[]>([]);
   const hpBarRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const hurtRefs = useRef<(HTMLDivElement | null)[]>([]);
   const blocksRef = useRef<FunBlock[]>([]);
   const [blocks, setBlocks] = useState<FunBlock[]>([]);
 
@@ -246,8 +281,9 @@ export function DonationDvd({
       const w = el?.offsetWidth ?? donors[i].size;
       const h = el?.offsetHeight ?? donors[i].size + 48;
       const r = donors[i].size / 2;
-      // More money = more life: scale 2..8 HP by head size.
-      const maxHp = 2 + Math.round((donors[i].size / 150) * 6);
+      // More money = way more life: quadratic scale ~4..23 HP by head size.
+      const sizeT = donors[i].size / 150;
+      const maxHp = 3 + Math.round(sizeT * sizeT * 20);
       const b: Body = {
         x: 0,
         y: 0,
@@ -262,6 +298,7 @@ export function DonationDvd({
         maxHp,
         deadUntil: 0,
         lastHitAt: 0,
+        respawnMs: RESPAWN_MIN_MS + sizeT * (RESPAWN_MAX_MS - RESPAWN_MIN_MS),
       };
       spawn(b, boundsW, boundsH);
       return b;
@@ -300,7 +337,15 @@ export function DonationDvd({
         b.hp = Math.max(0, b.hp - 1);
         const bar = hpBarRefs.current[i];
         if (bar) bar.style.width = `${(b.hp / b.maxHp) * 100}%`;
-        if (b.hp === 0) b.deadUntil = now + RESPAWN_MS;
+        // Minecraft-style red hurt flash.
+        const hurt = hurtRefs.current[i];
+        if (hurt) {
+          hurt.style.opacity = "0.55";
+          setTimeout(() => {
+            hurt.style.opacity = "0";
+          }, 160);
+        }
+        if (b.hp === 0) b.deadUntil = now + b.respawnMs;
       };
 
       bodiesRef.current.forEach((b, i) => {
@@ -329,18 +374,18 @@ export function DonationDvd({
 
         if (b.x <= 0) {
           b.x = 0;
-          b.vx = Math.abs(b.vx) * WOOD_DRAG;
+          b.vx = Math.abs(b.vx);
         } else if (b.x + b.w >= boundsW) {
           b.x = Math.max(0, boundsW - b.w);
-          b.vx = -Math.abs(b.vx) * WOOD_DRAG;
+          b.vx = -Math.abs(b.vx);
         }
 
         if (b.y <= 0) {
           b.y = 0;
-          b.vy = Math.abs(b.vy) * WOOD_DRAG;
+          b.vy = Math.abs(b.vy);
         } else if (b.y + b.h >= boundsH) {
           b.y = Math.max(0, boundsH - b.h);
-          b.vy = -Math.abs(b.vy) * WOOD_DRAG;
+          b.vy = -Math.abs(b.vy);
         }
 
         if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
@@ -352,11 +397,35 @@ export function DonationDvd({
           const a = bodies[i];
           const c = bodies[j];
           if (a.born > now || c.born > now || a.deadUntil > 0 || c.deadUntil > 0) continue;
-          if (resolveCollision(a, c)) {
-            if (fun) {
-              damage(a, i);
-              damage(c, j);
+
+          // Who is charging whom? Check approach speeds along the collision
+          // normal BEFORE resolving, so we know who dealt the hit.
+          const nx = c.x + c.w / 2 - (a.x + a.w / 2);
+          const ny = c.y + c.h / 2 - (a.y + a.h / 2);
+          const dist = Math.hypot(nx, ny);
+          const aApproach = dist > 0 && (a.vx * nx + a.vy * ny) / dist > APPROACH_MIN;
+          const cApproach = dist > 0 && (c.vx * nx + c.vy * ny) / dist < -APPROACH_MIN;
+
+          if (!resolveCollision(a, c) || !fun) continue;
+
+          const boost = (b: Body) => {
+            b.vx *= ATTACKER_BOOST;
+            b.vy *= ATTACKER_BOOST;
+            const s = Math.hypot(b.vx, b.vy);
+            if (s > MAX_SPEED) {
+              b.vx = (b.vx / s) * MAX_SPEED;
+              b.vy = (b.vy / s) * MAX_SPEED;
             }
+          };
+          if (aApproach && cApproach) {
+            damage(a, i); // head-on clash: both take the hit
+            damage(c, j);
+          } else if (aApproach) {
+            damage(c, j); // a charged into c — only the victim is hurt
+            boost(a);
+          } else if (cApproach) {
+            damage(a, i);
+            boost(c);
           }
         }
       }
@@ -420,18 +489,7 @@ export function DonationDvd({
       style={{ background: "transparent" }}
     >
       {blocks.map((blk) => (
-        <div
-          key={blk.id}
-          className="absolute select-none"
-          style={{
-            left: blk.x,
-            top: blk.y,
-            width: blk.size,
-            height: blk.size,
-            imageRendering: "pixelated",
-            ...blockStyle(blk.type),
-          }}
-        />
+        <FunBlockEl key={blk.id} blk={blk} />
       ))}
       <div
         className="fixed bottom-3 left-4 z-10 select-none text-left text-xs font-bold leading-snug text-emerald-500 opacity-80 sm:text-sm"
@@ -475,7 +533,17 @@ export function DonationDvd({
           >
             {d.name}
           </div>
-          <HeadImage donor={d} />
+          <div className="relative" style={{ width: d.size, height: d.size }}>
+            <HeadImage donor={d} />
+            {fun ? (
+              <div
+                ref={(el) => {
+                  hurtRefs.current[i] = el;
+                }}
+                className="pointer-events-none absolute inset-0 bg-red-500 opacity-0 transition-opacity duration-300"
+              />
+            ) : null}
+          </div>
           <div
             className="w-full truncate text-center font-bold text-emerald-400"
             style={{
