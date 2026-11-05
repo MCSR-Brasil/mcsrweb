@@ -103,7 +103,7 @@ type FunItem = {
 const ITEM_SPAWN_EVERY_MS = 12_000;
 const ITEM_MAX_ALIVE = 2;
 const ITEM_LIFETIME_MS = 20_000;
-const ITEM_SIZE = 40;
+const ITEM_SIZE = 64;
 const STRENGTH_MULT = 1.3;
 const STRENGTH_DURATION_MS = 10_000;
 const APPLE_HEAL = 10;
@@ -112,9 +112,8 @@ const MC_ITEM_TEX =
   "https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/item";
 
 const STRENGTH_STYLE: React.CSSProperties = {
-  backgroundImage: `url(${MC_ITEM_TEX}/potion.png)`,
+  backgroundImage: "url(https://minecraft.wiki/images/Invicon_Potion_of_Strength.png)",
   backgroundSize: "100% 100%",
-  filter: "drop-shadow(0 0 6px rgba(255,60,60,0.8))",
 };
 
 const APPLE_STYLE: React.CSSProperties = {
@@ -629,7 +628,7 @@ export function DonationDvd({
       style={{ background: "transparent" }}
     >
       {fun ? (
-        <style>{`@keyframes dvd-buff-pulse { 0% { transform: scale(0.9); opacity: 0.9; } 100% { transform: scale(1.6); opacity: 0; } }`}</style>
+        <style>{`@keyframes dvd-buff-pulse { 0% { transform: scale(0.35); opacity: 0.9; } 100% { transform: scale(1.5); opacity: 0; } }`}</style>
       ) : null}
       {blocks.map((blk) => (
         <FunBlockEl key={`b${blk.id}`} blk={blk} />
@@ -685,11 +684,12 @@ export function DonationDvd({
                 ref={(el) => {
                   ringRefs.current[i] = el;
                 }}
-                className="pointer-events-none absolute rounded-full border-2 border-orange-400"
+                className="pointer-events-none absolute inset-0"
                 style={{
                   display: "none",
-                  inset: -d.size * 0.08,
-                  animation: "dvd-buff-pulse 1.2s ease-out infinite",
+                  backgroundColor: "rgba(239,68,68,0.22)",
+                  border: `${Math.max(3, Math.round(d.size * 0.05))}px solid rgba(239,68,68,0.9)`,
+                  animation: "dvd-buff-pulse 1.1s ease-out infinite",
                 }}
               />
             ) : null}
