@@ -101,7 +101,7 @@ type FunItem = {
 };
 
 const ITEM_SPAWN_EVERY_MS = 12_000;
-const ITEM_MAX_ALIVE = 1;
+const ITEM_MAX_ALIVE = 2;
 const ITEM_LIFETIME_MS = 20_000;
 const ITEM_SIZE = 40;
 const STRENGTH_MULT = 1.3;
