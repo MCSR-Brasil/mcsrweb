@@ -13,17 +13,22 @@ export type DvdDonor = {
   headUrl: string;
   headFallbacks: string[];
   amountLabel: string;
+  amount: number;
   size: number; // px, already scaled by donation curve
 };
 
-// Log curve: heads grow quickly at low donations and flatten out at the top,
-// so a R$ 10 donor is still readable and a R$ 1500 donor isn't gigantic.
-const MIN_SIZE = 56;
+// Log10 curve normalized between the smallest and largest donations:
+// the smallest donor maps exactly to MIN_SIZE, the largest to MAX_SIZE,
+// and low-end differences (e.g. R$1 vs R$10) stay clearly visible.
+const MIN_SIZE = 40;
 const MAX_SIZE = 150;
 
-function headSize(amount: number, maxAmount: number): number {
-  const t = Math.log(1 + Math.max(0, amount)) / Math.log(1 + Math.max(1, maxAmount));
-  return Math.round(MIN_SIZE + (MAX_SIZE - MIN_SIZE) * Math.min(1, t));
+function headSize(amount: number, minAmount: number, maxAmount: number): number {
+  const lo = Math.log10(Math.max(1, minAmount));
+  const hi = Math.log10(Math.max(1, maxAmount));
+  if (hi <= lo) return MAX_SIZE;
+  const t = (Math.log10(Math.max(1, amount)) - lo) / (hi - lo);
+  return Math.round(MIN_SIZE + (MAX_SIZE - MIN_SIZE) * Math.min(1, Math.max(0, t)));
 }
 
 function formatBRL(amount: number): string {
@@ -36,6 +41,7 @@ function formatBRL(amount: number): string {
 
 export function toDvdDonors(donations: Donation[], uuidMap: UUIDMap): DvdDonor[] {
   const maxAmount = donations[0]?.amount ?? 0;
+  const minAmount = donations.reduce((m, d) => Math.min(m, d.amount), maxAmount);
   return donations.map((d) => {
     const uuid = uuidMap[d.normalizedName];
     const id = encodeURIComponent(uuid ?? d.name);
@@ -48,7 +54,8 @@ export function toDvdDonors(donations: Donation[], uuidMap: UUIDMap): DvdDonor[]
         "https://mc-heads.net/avatar/MHF_Steve/100",
       ],
       amountLabel: formatBRL(d.amount),
-      size: headSize(d.amount, maxAmount),
+      amount: d.amount,
+      size: headSize(d.amount, minAmount, maxAmount),
     };
   });
 }

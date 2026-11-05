@@ -48,6 +48,10 @@ type Body = {
   r: number; // collision radius (circle around the head)
   m: number; // mass, proportional to head area
   born: number; // timestamp when this head becomes visible
+  hp: number;
+  maxHp: number;
+  deadUntil: number; // performance.now() timestamp to respawn, 0 = alive
+  lastHitAt: number; // damage cooldown
 };
 
 function spawn(b: Body, boundsW: number, boundsH: number) {
@@ -63,7 +67,7 @@ const SPAWN_STAGGER_MS = 450;
 // --- ?fun mode: random wood/slime blocks as colliders ---
 type FunBlock = {
   id: number;
-  type: "wood" | "slime";
+  type: "wood" | "stone" | "slime";
   x: number;
   y: number;
   size: number;
@@ -71,11 +75,14 @@ type FunBlock = {
 };
 
 const BLOCK_LIFETIME_MS = 24_000;
-const BLOCK_SPAWN_EVERY_MS = 8_000;
+const BLOCK_SPAWN_EVERY_MS = 5_000;
 const BLOCK_MAX_ALIVE = 5;
 const BLOCK_SIZE = 96;
-const SLIME_BOOST = 1.8;
+const SLIME_BOOST = 1.4;
 const MAX_SPEED = 560;
+const WOOD_DRAG = 0.98; // wood/stone and wall hits remove 2% of speed
+const HIT_COOLDOWN_MS = 700;
+const RESPAWN_MS = 18_000;
 
 const MC_TEX_BASE =
   "https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/block";
@@ -89,6 +96,17 @@ const SLIME_STYLE: React.CSSProperties = {
   backgroundImage: `url(${MC_TEX_BASE}/slime_block.png)`,
   backgroundSize: "100% 100%",
 };
+
+const STONE_STYLE: React.CSSProperties = {
+  backgroundImage: `url(${MC_TEX_BASE}/stone_bricks.png)`,
+  backgroundSize: "100% 100%",
+};
+
+function blockStyle(type: FunBlock["type"]): React.CSSProperties {
+  if (type === "wood") return WOOD_STYLE;
+  if (type === "stone") return STONE_STYLE;
+  return SLIME_STYLE;
+}
 
 let blockId = 0;
 
@@ -126,22 +144,24 @@ function collideCircleRect(b: Body, blk: FunBlock): boolean {
     if (dot < 0) {
       b.vx -= 2 * dot * ux;
       b.vy -= 2 * dot * uy;
-    }
-  }
-
-  if (blk.type === "slime") {
-    b.vx *= SLIME_BOOST;
-    b.vy *= SLIME_BOOST;
-    const speed = Math.hypot(b.vx, b.vy);
-    if (speed > MAX_SPEED) {
-      b.vx = (b.vx / speed) * MAX_SPEED;
-      b.vy = (b.vy / speed) * MAX_SPEED;
+      if (blk.type === "slime") {
+        b.vx *= SLIME_BOOST;
+        b.vy *= SLIME_BOOST;
+        const speed = Math.hypot(b.vx, b.vy);
+        if (speed > MAX_SPEED) {
+          b.vx = (b.vx / speed) * MAX_SPEED;
+          b.vy = (b.vy / speed) * MAX_SPEED;
+        }
+      } else {
+        b.vx *= WOOD_DRAG;
+        b.vy *= WOOD_DRAG;
+      }
     }
   }
   return true;
 }
 
-function resolveCollision(a: Body, b: Body) {
+function resolveCollision(a: Body, b: Body): boolean {
   const acx = a.x + a.w / 2;
   const acy = a.y + a.h / 2;
   const bcx = b.x + b.w / 2;
@@ -151,7 +171,7 @@ function resolveCollision(a: Body, b: Body) {
   let dy = bcy - acy;
   let dist = Math.hypot(dx, dy);
   const minDist = a.r + b.r;
-  if (dist >= minDist) return;
+  if (dist >= minDist) return false;
 
   if (dist === 0) {
     dx = 1;
@@ -173,13 +193,14 @@ function resolveCollision(a: Body, b: Body) {
   const rvx = b.vx - a.vx;
   const rvy = b.vy - a.vy;
   const relVel = rvx * nx + rvy * ny;
-  if (relVel >= 0) return; // already separating
+  if (relVel >= 0) return false; // already separating
 
   const impulse = (-(1 + 1) * relVel) / (1 / a.m + 1 / b.m);
   a.vx -= (impulse / a.m) * nx;
   a.vy -= (impulse / a.m) * ny;
   b.vx += (impulse / b.m) * nx;
   b.vy += (impulse / b.m) * ny;
+  return true;
 }
 
 function randomVelocity(): { vx: number; vy: number } {
@@ -206,6 +227,7 @@ export function DonationDvd({
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const bodiesRef = useRef<Body[]>([]);
+  const hpBarRefs = useRef<(HTMLDivElement | null)[]>([]);
   const blocksRef = useRef<FunBlock[]>([]);
   const [blocks, setBlocks] = useState<FunBlock[]>([]);
 
@@ -224,6 +246,8 @@ export function DonationDvd({
       const w = el?.offsetWidth ?? donors[i].size;
       const h = el?.offsetHeight ?? donors[i].size + 48;
       const r = donors[i].size / 2;
+      // More money = more life: scale 2..8 HP by head size.
+      const maxHp = 2 + Math.round((donors[i].size / 150) * 6);
       const b: Body = {
         x: 0,
         y: 0,
@@ -234,6 +258,10 @@ export function DonationDvd({
         r,
         m: r * r,
         born: t0 + i * SPAWN_STAGGER_MS,
+        hp: maxHp,
+        maxHp,
+        deadUntil: 0,
+        lastHitAt: 0,
       };
       spawn(b, boundsW, boundsH);
       return b;
@@ -266,8 +294,30 @@ export function DonationDvd({
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
+      const damage = (b: Body, i: number) => {
+        if (b.deadUntil > 0 || now - b.lastHitAt < HIT_COOLDOWN_MS) return;
+        b.lastHitAt = now;
+        b.hp = Math.max(0, b.hp - 1);
+        const bar = hpBarRefs.current[i];
+        if (bar) bar.style.width = `${(b.hp / b.maxHp) * 100}%`;
+        if (b.hp === 0) b.deadUntil = now + RESPAWN_MS;
+      };
+
       bodiesRef.current.forEach((b, i) => {
         const el = nodeRefs.current[i];
+        if (b.deadUntil > 0) {
+          if (now < b.deadUntil) {
+            if (el && el.style.opacity !== "0") el.style.opacity = "0";
+            return;
+          }
+          // Respawn: fade back in at a random spot with full HP.
+          b.deadUntil = 0;
+          b.hp = b.maxHp;
+          spawn(b, boundsW, boundsH);
+          const bar = hpBarRefs.current[i];
+          if (bar) bar.style.width = "100%";
+          if (el) el.style.opacity = "1";
+        }
         if (now < b.born) {
           if (el) el.style.opacity = "0";
           return;
@@ -279,18 +329,18 @@ export function DonationDvd({
 
         if (b.x <= 0) {
           b.x = 0;
-          b.vx = Math.abs(b.vx);
+          b.vx = Math.abs(b.vx) * WOOD_DRAG;
         } else if (b.x + b.w >= boundsW) {
           b.x = Math.max(0, boundsW - b.w);
-          b.vx = -Math.abs(b.vx);
+          b.vx = -Math.abs(b.vx) * WOOD_DRAG;
         }
 
         if (b.y <= 0) {
           b.y = 0;
-          b.vy = Math.abs(b.vy);
+          b.vy = Math.abs(b.vy) * WOOD_DRAG;
         } else if (b.y + b.h >= boundsH) {
           b.y = Math.max(0, boundsH - b.h);
-          b.vy = -Math.abs(b.vy);
+          b.vy = -Math.abs(b.vy) * WOOD_DRAG;
         }
 
         if (el) el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
@@ -299,14 +349,20 @@ export function DonationDvd({
       const bodies = bodiesRef.current;
       for (let i = 0; i < bodies.length; i++) {
         for (let j = i + 1; j < bodies.length; j++) {
-          if (bodies[i].born <= now && bodies[j].born <= now) {
-            resolveCollision(bodies[i], bodies[j]);
+          const a = bodies[i];
+          const c = bodies[j];
+          if (a.born > now || c.born > now || a.deadUntil > 0 || c.deadUntil > 0) continue;
+          if (resolveCollision(a, c)) {
+            if (fun) {
+              damage(a, i);
+              damage(c, j);
+            }
           }
         }
       }
       if (fun) {
         for (const b of bodies) {
-          if (b.born > now) continue;
+          if (b.born > now || b.deadUntil > 0) continue;
           for (const blk of blocksRef.current) collideCircleRect(b, blk);
         }
       }
@@ -329,7 +385,7 @@ export function DonationDvd({
     };
   }, [donors, disabled, fun]);
 
-  // ?fun mode: periodically spawn a random block; each despawns after 18s.
+  // ?fun mode: periodically spawn a random block; each despawns after 24s.
   useEffect(() => {
     if (!fun || disabled) return;
     const tick = () => {
@@ -338,9 +394,10 @@ export function DonationDvd({
       blocksRef.current = blocksRef.current.filter((b) => b.until > now);
       if (container && blocksRef.current.length < BLOCK_MAX_ALIVE) {
         const size = BLOCK_SIZE;
+        const roll = Math.random();
         blocksRef.current.push({
           id: ++blockId,
-          type: Math.random() < 0.5 ? "wood" : "slime",
+          type: roll < 0.4 ? "wood" : roll < 0.7 ? "stone" : "slime",
           x: Math.random() * Math.max(0, container.clientWidth - size),
           y: Math.random() * Math.max(0, container.clientHeight - size),
           size,
@@ -372,7 +429,7 @@ export function DonationDvd({
             width: blk.size,
             height: blk.size,
             imageRendering: "pixelated",
-            ...(blk.type === "wood" ? WOOD_STYLE : SLIME_STYLE),
+            ...blockStyle(blk.type),
           }}
         />
       ))}
@@ -395,6 +452,20 @@ export function DonationDvd({
           className="absolute left-0 top-0 flex flex-col items-center transition-opacity duration-300 will-change-transform"
           style={{ width: d.size, opacity: 0 }}
         >
+          {fun ? (
+            <div
+              className="mb-1 w-full overflow-hidden rounded-sm bg-red-600"
+              style={{ height: Math.max(4, d.size * 0.055) }}
+            >
+              <div
+                ref={(el) => {
+                  hpBarRefs.current[i] = el;
+                }}
+                className="h-full bg-green-500 transition-[width] duration-200"
+                style={{ width: "100%" }}
+              />
+            </div>
+          ) : null}
           <div
             className="w-full whitespace-nowrap text-center font-semibold text-white"
             style={{
