@@ -3,9 +3,9 @@ import { getDvdDonors } from "../lib/donations";
 import { DonationDvd } from "./donation-dvd";
 
 async function Backdrop() {
-  // Cached server-side (~8 min via the fetch revalidate in sheets-backend):
-  // page renders stay fast; the /overlay/donations page still fetches fresh.
-  const donors = await getDvdDonors(false);
+  // Cached server-side for 2 min: page renders stay fast, new donors still
+  // show up quickly; the /overlay/donations page fetches fully fresh.
+  const donors = await getDvdDonors(false, 120);
   if (donors.length === 0) return null;
   return (
     <div className="pointer-events-none absolute inset-0 z-0">

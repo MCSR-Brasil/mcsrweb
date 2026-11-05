@@ -25,7 +25,7 @@ export function parseTimeToMs(raw: unknown): number | null {
   return minutes * 60_000 + seconds * 1_000 + millis;
 }
 
-type FetchOptions = { fresh?: boolean };
+type FetchOptions = { fresh?: boolean; revalidate?: number };
 
 async function fetchJson(url: string, opts?: FetchOptions): Promise<AppsScriptResponse | null> {
   try {
@@ -33,7 +33,7 @@ async function fetchJson(url: string, opts?: FetchOptions): Promise<AppsScriptRe
     if (opts?.fresh) {
       init.cache = "no-store";
     } else {
-      init.next = { revalidate: 500 };
+      init.next = { revalidate: opts?.revalidate ?? 500 };
     }
     const res = await fetch(url, init);
     if (!res.ok) return null;

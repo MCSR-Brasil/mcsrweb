@@ -53,10 +53,10 @@ export function toDvdDonors(donations: Donation[], uuidMap: UUIDMap): DvdDonor[]
   });
 }
 
-export async function getDvdDonors(fresh = true): Promise<DvdDonor[]> {
+export async function getDvdDonors(fresh = true, revalidate?: number): Promise<DvdDonor[]> {
   const [donations, uuidMap] = await Promise.all([
-    readDonations(fresh),
-    readUUIDMap(undefined, fresh),
+    readDonations(fresh, revalidate),
+    readUUIDMap(undefined, fresh, revalidate),
   ]);
   return toDvdDonors(donations, uuidMap);
 }
@@ -85,8 +85,8 @@ function parseDonationItem(item: unknown): Donation | null {
   return null;
 }
 
-export async function readDonations(fresh = false): Promise<Donation[]> {
-  const json = await fetchAppsScriptAction("getdonations", { fresh });
+export async function readDonations(fresh = false, revalidate?: number): Promise<Donation[]> {
+  const json = await fetchAppsScriptAction("getdonations", { fresh, revalidate });
   if (!json) return [];
 
   const raw = Array.isArray(json.apoiadores)

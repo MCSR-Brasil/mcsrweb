@@ -37,5 +37,5 @@ export default async function DonationsOverlayPage({
         )
       : await getDvdDonors();
 
-  return <DonationDvd donors={donors} />;
+  return <DonationDvd donors={donors} fun={"fun" in params} />;
 }

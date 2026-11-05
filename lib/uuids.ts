@@ -5,9 +5,9 @@ import { fetchAppsScriptAction } from "./sheets-backend";
 
 export type UUIDMap = Record<string, string>; // key: normalized name, value: uuid
 
-async function readUUIDMapFromAppsScript(fresh = false): Promise<UUIDMap> {
+async function readUUIDMapFromAppsScript(fresh = false, revalidate?: number): Promise<UUIDMap> {
   const map: UUIDMap = {};
-  const json = await fetchAppsScriptAction("runners", { fresh });
+  const json = await fetchAppsScriptAction("runners", { fresh, revalidate });
   const runners = Array.isArray(json?.runners) ? json.runners : [];
   for (const item of runners) {
     if (!Array.isArray(item)) continue;
@@ -23,8 +23,8 @@ async function readUUIDMapFromAppsScript(fresh = false): Promise<UUIDMap> {
   return map;
 }
 
-export async function readUUIDMap(csvPath?: string, fresh = false): Promise<UUIDMap> {
-  const backendMap = await readUUIDMapFromAppsScript(fresh);
+export async function readUUIDMap(csvPath?: string, fresh = false, revalidate?: number): Promise<UUIDMap> {
+  const backendMap = await readUUIDMapFromAppsScript(fresh, revalidate);
   if (Object.keys(backendMap).length > 0) return backendMap;
 
   const filePath = csvPath ?? path.resolve(process.cwd(), "data", "uuid.csv");

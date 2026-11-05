@@ -60,6 +60,88 @@ function spawn(b: Body, boundsW: number, boundsH: number) {
 
 const SPAWN_STAGGER_MS = 450;
 
+// --- ?fun mode: random wood/slime blocks as colliders ---
+type FunBlock = {
+  id: number;
+  type: "wood" | "slime";
+  x: number;
+  y: number;
+  size: number;
+  until: number; // Date.now() timestamp when it despawns
+};
+
+const BLOCK_LIFETIME_MS = 18_000;
+const BLOCK_SPAWN_EVERY_MS = 5_000;
+const BLOCK_MAX_ALIVE = 5;
+const BLOCK_SIZE = 72;
+const SLIME_BOOST = 1.45;
+const MAX_SPEED = 420;
+
+let blockId = 0;
+
+function collideCircleRect(b: Body, blk: FunBlock): boolean {
+  // Closest point on the block's rect to the head's center.
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  const nx = Math.max(blk.x, Math.min(cx, blk.x + blk.size));
+  const ny = Math.max(blk.y, Math.min(cy, blk.y + blk.size));
+  const dx = cx - nx;
+  const dy = cy - ny;
+  const dist = Math.hypot(dx, dy);
+  if (dist >= b.r) return false;
+
+  // Push the head out along the collision normal.
+  if (dist === 0) {
+    // Center is inside the rect: eject via the smallest penetration axis.
+    const left = cx - blk.x;
+    const right = blk.x + blk.size - cx;
+    const top = cy - blk.y;
+    const bottom = blk.y + blk.size - cy;
+    const min = Math.min(left, right, top, bottom);
+    if (min === left) b.x = blk.x - b.w;
+    else if (min === right) b.x = blk.x + blk.size;
+    else if (min === top) b.y = blk.y - b.h;
+    else b.y = blk.y + blk.size;
+  } else {
+    const push = (b.r - dist) / dist;
+    b.x += dx * push;
+    b.y += dy * push;
+    // Reflect velocity along the normal.
+    const ux = dx / dist;
+    const uy = dy / dist;
+    const dot = b.vx * ux + b.vy * uy;
+    if (dot < 0) {
+      b.vx -= 2 * dot * ux;
+      b.vy -= 2 * dot * uy;
+    }
+  }
+
+  if (blk.type === "slime") {
+    b.vx *= SLIME_BOOST;
+    b.vy *= SLIME_BOOST;
+    const speed = Math.hypot(b.vx, b.vy);
+    if (speed > MAX_SPEED) {
+      b.vx = (b.vx / speed) * MAX_SPEED;
+      b.vy = (b.vy / speed) * MAX_SPEED;
+    }
+  }
+  return true;
+}
+
+const WOOD_STYLE: React.CSSProperties = {
+  background:
+    "repeating-linear-gradient(90deg, #8a5a2b 0 8px, #6e4420 8px 10px), #7a4e24",
+  backgroundBlendMode: "multiply",
+  border: "3px solid #4a2f14",
+  boxShadow: "inset 0 0 0 3px rgba(0,0,0,0.25)",
+};
+
+const SLIME_STYLE: React.CSSProperties = {
+  background: "rgba(110, 200, 90, 0.55)",
+  border: "3px solid rgba(60, 140, 45, 0.8)",
+  boxShadow: "inset 0 0 0 6px rgba(160, 230, 140, 0.35)",
+};
+
 function resolveCollision(a: Body, b: Body) {
   const acx = a.x + a.w / 2;
   const acy = a.y + a.h / 2;
@@ -107,18 +189,29 @@ function randomVelocity(): { vx: number; vy: number } {
   return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
 }
 
+function isMobileDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(pointer: coarse), (max-width: 768px)").matches;
+}
+
 export function DonationDvd({
   donors,
   variant = "fixed",
+  fun = false,
 }: {
   donors: DvdDonor[];
   variant?: "fixed" | "fill";
+  fun?: boolean;
 }) {
+  const [disabled] = useState(isMobileDevice);
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const bodiesRef = useRef<Body[]>([]);
+  const blocksRef = useRef<FunBlock[]>([]);
+  const [blocks, setBlocks] = useState<FunBlock[]>([]);
 
   useEffect(() => {
+    if (disabled) return;
     const container = containerRef.current;
     if (!container || donors.length === 0) return;
 
@@ -212,6 +305,13 @@ export function DonationDvd({
           }
         }
       }
+      if (fun) {
+        for (const b of bodies) {
+          if (b.born > now) continue;
+          for (const blk of blocksRef.current) collideCircleRect(b, blk);
+        }
+      }
+
       bodies.forEach((b, i) => {
         const el = nodeRefs.current[i];
         if (el && b.born <= now) {
@@ -228,7 +328,34 @@ export function DonationDvd({
       ro.disconnect();
       window.removeEventListener("resize", syncBounds);
     };
-  }, [donors]);
+  }, [donors, disabled, fun]);
+
+  // ?fun mode: periodically spawn a random block; each despawns after 18s.
+  useEffect(() => {
+    if (!fun || disabled) return;
+    const tick = () => {
+      const container = containerRef.current;
+      const now = Date.now();
+      blocksRef.current = blocksRef.current.filter((b) => b.until > now);
+      if (container && blocksRef.current.length < BLOCK_MAX_ALIVE) {
+        const size = BLOCK_SIZE;
+        blocksRef.current.push({
+          id: ++blockId,
+          type: Math.random() < 0.5 ? "wood" : "slime",
+          x: Math.random() * Math.max(0, container.clientWidth - size),
+          y: Math.random() * Math.max(0, container.clientHeight - size),
+          size,
+          until: now + BLOCK_LIFETIME_MS,
+        });
+      }
+      setBlocks([...blocksRef.current]);
+    };
+    const interval = setInterval(tick, BLOCK_SPAWN_EVERY_MS);
+    tick();
+    return () => clearInterval(interval);
+  }, [fun, disabled]);
+
+  if (disabled) return null;
 
   return (
     <div
@@ -236,6 +363,20 @@ export function DonationDvd({
       className={`${variant === "fixed" ? "fixed" : "absolute"} inset-0 overflow-hidden${variant === "fill" ? " pointer-events-none" : ""}`}
       style={{ background: "transparent" }}
     >
+      {blocks.map((blk) => (
+        <div
+          key={blk.id}
+          className="absolute select-none"
+          style={{
+            left: blk.x,
+            top: blk.y,
+            width: blk.size,
+            height: blk.size,
+            imageRendering: "pixelated",
+            ...(blk.type === "wood" ? WOOD_STYLE : SLIME_STYLE),
+          }}
+        />
+      ))}
       <div
         className="fixed bottom-3 left-4 z-10 select-none text-left text-xs font-bold leading-snug text-emerald-500 opacity-80 sm:text-sm"
         style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}
