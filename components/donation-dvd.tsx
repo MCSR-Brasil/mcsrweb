@@ -70,12 +70,25 @@ type FunBlock = {
   until: number; // Date.now() timestamp when it despawns
 };
 
-const BLOCK_LIFETIME_MS = 18_000;
-const BLOCK_SPAWN_EVERY_MS = 5_000;
+const BLOCK_LIFETIME_MS = 24_000;
+const BLOCK_SPAWN_EVERY_MS = 8_000;
 const BLOCK_MAX_ALIVE = 5;
-const BLOCK_SIZE = 72;
-const SLIME_BOOST = 1.45;
-const MAX_SPEED = 420;
+const BLOCK_SIZE = 96;
+const SLIME_BOOST = 1.8;
+const MAX_SPEED = 560;
+
+const MC_TEX_BASE =
+  "https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/block";
+
+const WOOD_STYLE: React.CSSProperties = {
+  backgroundImage: `url(${MC_TEX_BASE}/oak_planks.png)`,
+  backgroundSize: "100% 100%",
+};
+
+const SLIME_STYLE: React.CSSProperties = {
+  backgroundImage: `url(${MC_TEX_BASE}/slime_block.png)`,
+  backgroundSize: "100% 100%",
+};
 
 let blockId = 0;
 
@@ -127,20 +140,6 @@ function collideCircleRect(b: Body, blk: FunBlock): boolean {
   }
   return true;
 }
-
-const WOOD_STYLE: React.CSSProperties = {
-  background:
-    "repeating-linear-gradient(90deg, #8a5a2b 0 8px, #6e4420 8px 10px), #7a4e24",
-  backgroundBlendMode: "multiply",
-  border: "3px solid #4a2f14",
-  boxShadow: "inset 0 0 0 3px rgba(0,0,0,0.25)",
-};
-
-const SLIME_STYLE: React.CSSProperties = {
-  background: "rgba(110, 200, 90, 0.55)",
-  border: "3px solid rgba(60, 140, 45, 0.8)",
-  boxShadow: "inset 0 0 0 6px rgba(160, 230, 140, 0.35)",
-};
 
 function resolveCollision(a: Body, b: Body) {
   const acx = a.x + a.w / 2;
