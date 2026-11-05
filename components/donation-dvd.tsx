@@ -53,6 +53,8 @@ type Body = {
   deadUntil: number; // performance.now() timestamp to respawn, 0 = alive
   lastHitAt: number; // damage cooldown
   respawnMs: number; // bigger heads take longer to come back
+  dmgMult: number; // damage multiplier (strength potion)
+  buffUntil: number; // performance.now() timestamp when strength wears off
 };
 
 function spawn(b: Body, boundsW: number, boundsH: number) {
@@ -84,9 +86,44 @@ const MAX_SPEED = 560;
 const WOOD_DRAG = 0.98; // wood/stone hits remove 2% of speed
 const HIT_COOLDOWN_MS = 700;
 const RESPAWN_MIN_MS = 12_000; // smallest heads respawn fast
-const RESPAWN_MAX_MS = 36_000; // biggest heads take the longest
+const RESPAWN_MAX_MS = 60_000; // boss heads take up to a minute
 const ATTACKER_BOOST = 1.1; // small speed bonus for a clean hit
 const APPROACH_MIN = 20; // px/s toward the other head to count as attacking
+
+// --- ?fun mode: pickup items ---
+type FunItem = {
+  id: number;
+  kind: "strength" | "apple";
+  x: number;
+  y: number;
+  size: number;
+  until: number; // Date.now() timestamp when it despawns
+};
+
+const ITEM_SPAWN_EVERY_MS = 12_000;
+const ITEM_MAX_ALIVE = 1;
+const ITEM_LIFETIME_MS = 20_000;
+const ITEM_SIZE = 40;
+const STRENGTH_MULT = 1.3;
+const STRENGTH_DURATION_MS = 10_000;
+const APPLE_HEAL = 10;
+
+const MC_ITEM_TEX =
+  "https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/item";
+
+const STRENGTH_STYLE: React.CSSProperties = {
+  backgroundImage: `url(${MC_ITEM_TEX}/potion.png)`,
+  backgroundSize: "100% 100%",
+  filter: "drop-shadow(0 0 6px rgba(255,60,60,0.8))",
+};
+
+const APPLE_STYLE: React.CSSProperties = {
+  backgroundImage: `url(${MC_ITEM_TEX}/golden_apple.png)`,
+  backgroundSize: "100% 100%",
+  filter: "drop-shadow(0 0 6px rgba(255,215,0,0.8))",
+};
+
+let itemId = 0;
 
 const MC_TEX_BASE =
   "https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21/assets/minecraft/textures/block";
@@ -243,6 +280,35 @@ function FunBlockEl({ blk }: { blk: FunBlock }) {
   );
 }
 
+function FunItemEl({ it }: { it: FunItem }) {
+  const [opacity, setOpacity] = useState(0);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setOpacity(1));
+    const fadeOutAt = Math.max(0, it.until - Date.now() - 400);
+    const t = setTimeout(() => setOpacity(0), fadeOutAt);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+    };
+  }, [it.until]);
+
+  return (
+    <div
+      className="absolute select-none transition-opacity duration-300"
+      style={{
+        left: it.x,
+        top: it.y,
+        width: it.size,
+        height: it.size,
+        imageRendering: "pixelated",
+        opacity,
+        ...(it.kind === "strength" ? STRENGTH_STYLE : APPLE_STYLE),
+      }}
+    />
+  );
+}
+
 function isMobileDevice(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(pointer: coarse), (max-width: 768px)").matches;
@@ -263,8 +329,12 @@ export function DonationDvd({
   const bodiesRef = useRef<Body[]>([]);
   const hpBarRefs = useRef<(HTMLDivElement | null)[]>([]);
   const hurtRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const healRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const ringRefs = useRef<(HTMLDivElement | null)[]>([]);
   const blocksRef = useRef<FunBlock[]>([]);
   const [blocks, setBlocks] = useState<FunBlock[]>([]);
+  const itemsRef = useRef<FunItem[]>([]);
+  const [items, setItems] = useState<FunItem[]>([]);
 
   useEffect(() => {
     if (disabled) return;
@@ -281,9 +351,9 @@ export function DonationDvd({
       const w = el?.offsetWidth ?? donors[i].size;
       const h = el?.offsetHeight ?? donors[i].size + 48;
       const r = donors[i].size / 2;
-      // More money = way more life: quadratic scale ~4..23 HP by head size.
+      // More money = boss-level life: steep quadratic ~6..48 HP by head size.
       const sizeT = donors[i].size / 150;
-      const maxHp = 3 + Math.round(sizeT * sizeT * 20);
+      const maxHp = 3 + Math.round(sizeT * sizeT * 45);
       const b: Body = {
         x: 0,
         y: 0,
@@ -299,6 +369,8 @@ export function DonationDvd({
         deadUntil: 0,
         lastHitAt: 0,
         respawnMs: RESPAWN_MIN_MS + sizeT * (RESPAWN_MAX_MS - RESPAWN_MIN_MS),
+        dmgMult: 1,
+        buffUntil: 0,
       };
       spawn(b, boundsW, boundsH);
       return b;
@@ -331,10 +403,10 @@ export function DonationDvd({
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
-      const damage = (b: Body, i: number) => {
+      const damage = (b: Body, i: number, amount = 1) => {
         if (b.deadUntil > 0 || now - b.lastHitAt < HIT_COOLDOWN_MS) return;
         b.lastHitAt = now;
-        b.hp = Math.max(0, b.hp - 1);
+        b.hp = Math.max(0, b.hp - amount);
         const bar = hpBarRefs.current[i];
         if (bar) bar.style.width = `${(b.hp / b.maxHp) * 100}%`;
         // Minecraft-style red hurt flash.
@@ -358,6 +430,8 @@ export function DonationDvd({
           // Respawn: fade back in at a random spot with full HP.
           b.deadUntil = 0;
           b.hp = b.maxHp;
+          b.dmgMult = 1;
+          b.buffUntil = 0;
           spawn(b, boundsW, boundsH);
           const bar = hpBarRefs.current[i];
           if (bar) bar.style.width = "100%";
@@ -368,6 +442,14 @@ export function DonationDvd({
           return;
         }
         if (el && el.style.opacity === "0") el.style.opacity = "1";
+
+        // Strength buff expiry + pulsing ring visibility.
+        const ring = ringRefs.current[i];
+        if (b.buffUntil > 0 && now >= b.buffUntil) {
+          b.buffUntil = 0;
+          b.dmgMult = 1;
+        }
+        if (ring) ring.style.display = b.buffUntil > now ? "block" : "none";
 
         b.x += b.vx * dt;
         b.y += b.vy * dt;
@@ -418,13 +500,13 @@ export function DonationDvd({
             }
           };
           if (aApproach && cApproach) {
-            damage(a, i); // head-on clash: both take the hit
-            damage(c, j);
+            damage(a, i, c.dmgMult); // head-on clash: both take the hit
+            damage(c, j, a.dmgMult);
           } else if (aApproach) {
-            damage(c, j); // a charged into c — only the victim is hurt
+            damage(c, j, a.dmgMult); // a charged into c — only the victim is hurt
             boost(a);
           } else if (cApproach) {
-            damage(a, i);
+            damage(a, i, c.dmgMult);
             boost(c);
           }
         }
@@ -434,6 +516,39 @@ export function DonationDvd({
           if (b.born > now || b.deadUntil > 0) continue;
           for (const blk of blocksRef.current) collideCircleRect(b, blk);
         }
+
+        // Item pickups.
+        let picked = false;
+        itemsRef.current = itemsRef.current.filter((it) => {
+          const icx = it.x + it.size / 2;
+          const icy = it.y + it.size / 2;
+          for (let i = 0; i < bodies.length; i++) {
+            const b = bodies[i];
+            if (b.born > now || b.deadUntil > 0) continue;
+            const d = Math.hypot(b.x + b.w / 2 - icx, b.y + b.h / 2 - icy);
+            if (d >= b.r + it.size * 0.4) continue;
+
+            picked = true;
+            if (it.kind === "strength") {
+              b.dmgMult = STRENGTH_MULT;
+              b.buffUntil = now + STRENGTH_DURATION_MS;
+            } else {
+              b.hp = Math.min(b.maxHp, b.hp + APPLE_HEAL);
+              const bar = hpBarRefs.current[i];
+              if (bar) bar.style.width = `${(b.hp / b.maxHp) * 100}%`;
+              const heal = healRefs.current[i];
+              if (heal) {
+                heal.style.opacity = "0.55";
+                setTimeout(() => {
+                  heal.style.opacity = "0";
+                }, 160);
+              }
+            }
+            return false;
+          }
+          return true;
+        });
+        if (picked) setItems([...itemsRef.current]);
       }
 
       bodies.forEach((b, i) => {
@@ -480,6 +595,31 @@ export function DonationDvd({
     return () => clearInterval(interval);
   }, [fun, disabled]);
 
+  // ?fun mode: periodically spawn a pickup item; each despawns after 15s.
+  useEffect(() => {
+    if (!fun || disabled) return;
+    const tick = () => {
+      const container = containerRef.current;
+      const now = Date.now();
+      itemsRef.current = itemsRef.current.filter((it) => it.until > now);
+      if (container && itemsRef.current.length < ITEM_MAX_ALIVE) {
+        const size = ITEM_SIZE;
+        itemsRef.current.push({
+          id: ++itemId,
+          kind: Math.random() < 0.5 ? "strength" : "apple",
+          x: Math.random() * Math.max(0, container.clientWidth - size),
+          y: Math.random() * Math.max(0, container.clientHeight - size),
+          size,
+          until: now + ITEM_LIFETIME_MS,
+        });
+      }
+      setItems([...itemsRef.current]);
+    };
+    const interval = setInterval(tick, ITEM_SPAWN_EVERY_MS);
+    tick();
+    return () => clearInterval(interval);
+  }, [fun, disabled]);
+
   if (disabled) return null;
 
   return (
@@ -488,8 +628,14 @@ export function DonationDvd({
       className={`${variant === "fixed" ? "fixed" : "absolute"} inset-0 overflow-hidden${variant === "fill" ? " pointer-events-none" : ""}`}
       style={{ background: "transparent" }}
     >
+      {fun ? (
+        <style>{`@keyframes dvd-buff-pulse { 0% { transform: scale(0.9); opacity: 0.9; } 100% { transform: scale(1.6); opacity: 0; } }`}</style>
+      ) : null}
       {blocks.map((blk) => (
-        <FunBlockEl key={blk.id} blk={blk} />
+        <FunBlockEl key={`b${blk.id}`} blk={blk} />
+      ))}
+      {items.map((it) => (
+        <FunItemEl key={`i${it.id}`} it={it} />
       ))}
       <div
         className="fixed bottom-3 left-4 z-10 select-none text-left text-xs font-bold leading-snug text-emerald-500 opacity-80 sm:text-sm"
@@ -534,14 +680,35 @@ export function DonationDvd({
             {d.name}
           </div>
           <div className="relative" style={{ width: d.size, height: d.size }}>
-            <HeadImage donor={d} />
             {fun ? (
               <div
                 ref={(el) => {
-                  hurtRefs.current[i] = el;
+                  ringRefs.current[i] = el;
                 }}
-                className="pointer-events-none absolute inset-0 bg-red-500 opacity-0 transition-opacity duration-300"
+                className="pointer-events-none absolute rounded-full border-2 border-orange-400"
+                style={{
+                  display: "none",
+                  inset: -d.size * 0.08,
+                  animation: "dvd-buff-pulse 1.2s ease-out infinite",
+                }}
               />
+            ) : null}
+            <HeadImage donor={d} />
+            {fun ? (
+              <>
+                <div
+                  ref={(el) => {
+                    hurtRefs.current[i] = el;
+                  }}
+                  className="pointer-events-none absolute inset-0 bg-red-500 opacity-0 transition-opacity duration-300"
+                />
+                <div
+                  ref={(el) => {
+                    healRefs.current[i] = el;
+                  }}
+                  className="pointer-events-none absolute inset-0 bg-green-500 opacity-0 transition-opacity duration-300"
+                />
+              </>
             ) : null}
           </div>
           <div
